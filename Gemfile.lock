@@ -54,6 +54,8 @@ GEM
     activerecord (7.0.3.1)
       activemodel (= 7.0.3.1)
       activesupport (= 7.0.3.1)
+    activerecord-copy (1.1.0)
+      activerecord (>= 3.1)
     activestorage (7.0.3.1)
       actionpack (= 7.0.3.1)
       activejob (= 7.0.3.1)
@@ -111,6 +113,7 @@ GEM
     nio4r (2.5.8)
     nokogiri (1.13.8-x86_64-linux)
       racc (~> 1.4)
+    pg (1.4.3)
     puma (5.6.5)
       nio4r (~> 2.0)
     racc (1.6.0)
@@ -153,7 +156,6 @@ GEM
       connection_pool (>= 2.2.5)
       rack (~> 2.0)
       redis (>= 4.5.0, < 5)
-    sqlite3 (1.4.4)
     strscan (3.0.4)
     thor (1.2.1)
     timeout (0.3.0)
@@ -168,13 +170,14 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  activerecord-copy
   bootsnap
   debug
+  pg
   puma (~> 5.0)
   rack-cors
   rails (~> 7.0.3, >= 7.0.3.1)
   sidekiq
-  sqlite3 (~> 1.4)
   tzinfo-data
 
 RUBY VERSION
