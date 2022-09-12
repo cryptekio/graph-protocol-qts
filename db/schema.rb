@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_05_161806) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_07_134737) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -33,6 +33,19 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_05_161806) do
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "uuid"
+    t.index ["uuid"], name: "index_graph_protocol_query_sets_on_uuid", unique: true
   end
 
+  create_table "graph_protocol_tests", force: :cascade do |t|
+    t.string "uuid"
+    t.string "integer"
+    t.bigint "graph_protocol_query_set_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["graph_protocol_query_set_id"], name: "index_graph_protocol_tests_on_graph_protocol_query_set_id"
+    t.index ["uuid"], name: "index_graph_protocol_tests_on_uuid", unique: true
+  end
+
+  add_foreign_key "graph_protocol_tests", "graph_protocol_query_sets"
 end

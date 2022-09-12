@@ -3,4 +3,10 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "articles#index"
+
+  post '/tests', to: 'graph_protocol/tests#create'
+  get '/tests', to: 'graph_protocol/tests#index'
+  get '/tests/:uuid', to: 'graph_protocol/tests#show'
+
+  get '/querysets', to: 'graph_protocol/query_sets#index'
 end

@@ -6,7 +6,8 @@
 
 # Ignore testdata
 *.jsonl
-
+# Ignore env file
+/.env
 # Ignore bundler config.
 /.bundle
 
