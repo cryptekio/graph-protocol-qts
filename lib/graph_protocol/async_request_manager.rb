@@ -11,6 +11,7 @@ module GraphProtocol
       config = { :sleep_enabled => args[:sleep_enabled] || true,
                  :query_set => args[:query_set],
                  :limit => args[:limit] || false,
+                 :subgraphs => args[:subgraphs] || false,
                  :workers => args[:workers] || 50 }
 
       @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
@@ -27,8 +28,13 @@ module GraphProtocol
 
             url = base_url + query[:subgraph]
             headers = [['content-type','application/json']]
+            req_body = JSON.parse(query[:query])
 
-            result = internet.post(url, headers, query[:query])
+            unless query[:variables] == "null"
+              req_body.merge!({:variables => JSON.parse(query[:variables])})
+            end
+
+            result = internet.post(url, headers, req_body.to_json)
 
             puts "#{query[:query_id]} : #{JSON.parse(result.read)}"
           end
@@ -43,14 +49,17 @@ module GraphProtocol
     private
 
       def queries(config = {})
-        config[:limit] ? config[:query_set].queries.order(:offset).limit(config[:limit]) : config[:query_set].queries.order(:offset)
+        base = config[:subgraphs] ? config[:query_set].queries.subgraphs(config[:subgraphs]) : config[:query_set].queries
+
+        result = config[:limit] ? base.sort_by_offset.limit(config[:limit]) : base.sort_by_offset 
+        result
       end
 
       def base_url
         root_path = ENV['GRAPH_GATEWAY_URL'] || "https://gateway.testnet.thegraph.com"
         api_key = ENV['GRAPH_GATEWAY_API_KEY']
 
-        root_path + "/api/" + api_key + "/subgraphs/id/"
+        root_path + "/api/" + api_key + "/deployments/id/"
       end
 
       def get_remaining_offset(query_offset = 0.0)
