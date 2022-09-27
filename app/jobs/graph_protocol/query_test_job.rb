@@ -4,6 +4,6 @@ class GraphProtocol::QueryTestJob < ApplicationJob
 
   def perform(args = {})
     manager = GraphProtocol::AsyncRequestManager.new
-    manager.fire_requests!(args)
+    manager.process_requests(args)
   end
 end

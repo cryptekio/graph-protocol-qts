@@ -6,25 +6,46 @@ require 'async/http/internet/instance'
 module GraphProtocol
   class AsyncRequestManager
 
-    def fire_requests!(args = {})
+    def load_requests(args = {})
 
-      config = { :sleep_enabled => args[:sleep_enabled] || true,
-                 :query_set_id => args[:query_set_id],
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      config = { :query_set_id => args[:query_set_id],
                  :limit => args[:limit] || false,
-                 :subgraphs => args[:subgraphs] || false,
-                 :workers => args[:workers] || 50 }
+                 :subgraphs => args[:subgraphs] || false }
+      size = queries(config).count
+      offset = 0
+      limit = args[:query_set_chunk_size] || size 
 
-      @start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      while size > offset 
+        cfg = { :sleep_enabled => args[:sleep_enabled] || true,
+                :start_time => start_time,
+                :query_set_id => args[:query_set_id],
+                :query_range_start => offset,
+                :limit => limit,
+                :subgraphs => args[:subgraphs] || false,
+                :workers => args[:workers] || 50 }
+        send_job(cfg)
+        offset += limit
+      end
+    end
+
+    def send_job(args = {})
+      GraphProtocol::QueryTestJob.perform_later(args)
+    end
+
+    def process_requests(args = {})
 
       Async do
         internet = Async::HTTP::Internet.instance
         barrier = Async::Barrier.new
-        semaphore = Async::Semaphore.new(config[:workers], parent: barrier)
+        semaphore = Async::Semaphore.new(args[:workers], parent: barrier)
 
-        queries(config).each do |query|
+        queries(args).each do |query|
           semaphore.async do
 
-            sleep get_remaining_offset(query[:offset]) if config[:sleep_enabled]
+            remaining = get_remaining_offset(query[:offset], args[:start_time])
+            #puts "#{query[:query_id]}, query offset: #{query[:offset]}, sleep: #{remaining}"
+            sleep remaining if args[:sleep_enabled]
 
             url = base_url + query[:subgraph]
             headers = [['content-type','application/json']]
@@ -36,7 +57,12 @@ module GraphProtocol
 
             result = internet.post(url, headers, req_body.to_json)
 
-            puts "#{query[:query_id]} : #{JSON.parse(result.read)}" unless result.success?
+            unless result.success?
+              puts "Failed query: #{query[:query_id]}"
+              puts "#{result.inspect}"
+            end
+
+            result&.close
           end
         end
 
@@ -50,10 +76,10 @@ module GraphProtocol
 
       def queries(config = {})
         query_set = GraphProtocol::QuerySet.find_by(:id => config[:query_set_id])
-        base = config[:subgraphs] ? query_set.queries.subgraphs(config[:subgraphs]) : query_set.queries
+        base = config[:subgraphs] ? query_set.queries.subgraphs(config[:subgraphs]).sort_by_offset : query_set.queries.sort_by_offset
 
-        result = config[:limit] ? base.sort_by_offset.limit(config[:limit]) : base.sort_by_offset 
-        result
+        with_range = config[:query_range_start] ? base.offset(config[:query_range_start]) : base
+        config[:limit] ? with_range.limit(config[:limit]) : with_range
       end
 
       def base_url
@@ -63,8 +89,8 @@ module GraphProtocol
         root_path + "/api/" + api_key + "/deployments/id/"
       end
 
-      def get_remaining_offset(query_offset = 0.0)
-        remain = query_offset - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - @start_time)
+      def get_remaining_offset(query_offset = 0.0, start_time)
+        remain = query_offset - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time)
         result = remain > 0 ? remain : 0.0
 
         result
