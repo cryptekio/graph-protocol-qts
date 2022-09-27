@@ -61,7 +61,7 @@ module GraphProtocol
               puts "Failed query: #{query[:query_id]}"
               puts "#{result.inspect}"
             end
-
+          ensure
             result&.close
           end
         end
@@ -76,24 +76,17 @@ module GraphProtocol
 
       def queries(config = {})
         query_set = GraphProtocol::QuerySet.find_by(:id => config[:query_set_id])
-        base = config[:subgraphs] ? query_set.queries.subgraphs(config[:subgraphs]).sort_by_offset : query_set.queries.sort_by_offset
-
-        with_range = config[:query_range_start] ? base.offset(config[:query_range_start]) : base
-        config[:limit] ? with_range.limit(config[:limit]) : with_range
+        query_set.queries.subgraphs(config[:subgraphs]).sort_by_delay.set_offset(config[:query_range_start]).set_limit(config[:limit])
       end
 
       def base_url
         root_path = ENV['GRAPH_GATEWAY_URL'] || "https://gateway.testnet.thegraph.com"
-        api_key = ENV['GRAPH_GATEWAY_API_KEY']
-
-        root_path + "/api/" + api_key + "/deployments/id/"
+        root_path + "/api/" + ENV['GRAPH_GATEWAY_API_KEY'] + "/deployments/id/"
       end
 
       def get_remaining_offset(query_offset = 0.0, start_time)
         remain = query_offset - (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time)
-        result = remain > 0 ? remain : 0.0
-
-        result
+        remain > 0 ? remain : 0.0
       end
 
   end
