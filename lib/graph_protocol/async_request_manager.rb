@@ -9,7 +9,7 @@ module GraphProtocol
     def fire_requests!(args = {})
 
       config = { :sleep_enabled => args[:sleep_enabled] || true,
-                 :query_set => args[:query_set],
+                 :query_set_id => args[:query_set_id],
                  :limit => args[:limit] || false,
                  :subgraphs => args[:subgraphs] || false,
                  :workers => args[:workers] || 50 }
@@ -36,7 +36,7 @@ module GraphProtocol
 
             result = internet.post(url, headers, req_body.to_json)
 
-            puts "#{query[:query_id]} : #{JSON.parse(result.read)}"
+            puts "#{query[:query_id]} : #{JSON.parse(result.read)}" unless result.success?
           end
         end
 
@@ -49,7 +49,8 @@ module GraphProtocol
     private
 
       def queries(config = {})
-        base = config[:subgraphs] ? config[:query_set].queries.subgraphs(config[:subgraphs]) : config[:query_set].queries
+        query_set = GraphProtocol::QuerySet.find_by(:id => config[:query_set_id])
+        base = config[:subgraphs] ? query_set.queries.subgraphs(config[:subgraphs]) : query_set.queries
 
         result = config[:limit] ? base.sort_by_offset.limit(config[:limit]) : base.sort_by_offset 
         result

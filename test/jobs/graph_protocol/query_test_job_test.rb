@@ -1,6 +1,6 @@
 require "test_helper"
 
-class GraphProtocol::QueryFireworksJobTest < ActiveJob::TestCase
+class GraphProtocol::QueryTestJobTest < ActiveJob::TestCase
   # test "the truth" do
   #   assert true
   # end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_07_134737) do
+ActiveRecord::Schema[7.0].define(version: 2022_09_23_131655) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -25,6 +25,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_09_07_134737) do
     t.float "offset"
     t.float "timestamp"
     t.index ["query_set_id", "offset"], name: "index_graph_protocol_queries_on_query_set_id_and_offset"
+    t.index ["query_set_id", "subgraph", "offset"], name: "sort_by_subgraph"
     t.index ["query_set_id"], name: "index_graph_protocol_queries_on_query_set_id"
   end
 
