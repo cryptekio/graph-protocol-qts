@@ -1,15 +1,16 @@
 class GraphProtocol::Query < ApplicationRecord
   belongs_to :query_set
+  #scope :sort_by_delay, -> { order(:offset) }
 
   def self.subgraphs(subgraphs = [])
-    if subgraphs
+      return all unless subgraphs
+
       query = "" 
       subgraphs.each_with_index do |subgraph,index|
         query = query + "subgraph = \'#{subgraph}\'"
         query = query + " or " unless subgraphs.count == index+1
       end
       where(query)
-    end
   end
 
   def self.sort_by_delay

@@ -1,6 +1,6 @@
 require "test_helper"
 
-class GraphProtocol::QueryTestJobTest < ActiveJob::TestCase
+class GraphProtocol::QlogQueryRunnerJobTest < ActiveJob::TestCase
   # test "the truth" do
   #   assert true
   # end
