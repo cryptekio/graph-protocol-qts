@@ -33,7 +33,7 @@ module GraphProtocol
           object = bucket(args[:bucket_name]).object(args[:key])
 
           options = {}
-          options = { range: "#{args[:range_start]}-#{args[:range_end]}" } if options[:range_start] and options[:range_end]
+          options = { range: "bytes=#{args[:range_start]}-#{args[:range_end]}" } if args[:range_start] and args[:range_end]
 
           object.get(**options)
         end
@@ -52,7 +52,7 @@ module GraphProtocol
 
 
           def self.chunk_size
-            ENV['AWS_S3_MAX_CHUNK_SIZE'].nil? ? 10000000 : ENV['AWS_S3_MAX_CHUNK_SIZE'] *1000000
+            ENV['AWS_S3_MAX_CHUNK_SIZE'].nil? ? 100000000 : ENV['AWS_S3_MAX_CHUNK_SIZE'] *1000000 # 100mb default
           end
 
           def self.get_object_chunks(args)
@@ -71,15 +71,6 @@ module GraphProtocol
               index += chunk_size+1
             end 
 
-          end
-
-          def self.get_object(args)
-            object = bucket(args[:bucket_name]).object(args[:key])
-
-            options = {}
-            options = { range: "#{args[:range_start]}-#{args[:range_end]}" } if options[:range_start] and options[:range_end]
-
-            object.get(**options)
           end
 
       end
