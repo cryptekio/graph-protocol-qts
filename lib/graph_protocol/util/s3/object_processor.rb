@@ -19,8 +19,8 @@ module GraphProtocol
                 yield build_query_array(line: line,
                                         time: time,
                                         query_set_id: query_set_id)
-                buffer = remain
               end
+                buffer = remain
             end
 
           end
