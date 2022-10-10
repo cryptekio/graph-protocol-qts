@@ -8,5 +8,7 @@ Rails.application.routes.draw do
   get '/tests', to: 'graph_protocol/tests#index'
   get '/tests/:uuid', to: 'graph_protocol/tests#show'
 
-  get '/querysets', to: 'graph_protocol/query_sets#index'
+  get '/querysets', to: 'graph_protocol/query_set#index'
+  post '/queryset', to: 'graph_protocol/query_set#create'
+
 end
