@@ -10,43 +10,51 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_09_23_131655) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_10_112708) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
-  create_table "graph_protocol_queries", force: :cascade do |t|
-    t.bigint "query_set_id"
+  create_table "graph_protocol_queries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "query_set_id"
     t.string "query_id"
     t.string "subgraph"
-    t.text "query"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
     t.string "variables"
+    t.text "query"
     t.float "offset"
     t.float "timestamp"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["query_set_id", "offset"], name: "index_graph_protocol_queries_on_query_set_id_and_offset"
     t.index ["query_set_id", "subgraph", "offset"], name: "sort_by_subgraph"
     t.index ["query_set_id"], name: "index_graph_protocol_queries_on_query_set_id"
   end
 
-  create_table "graph_protocol_query_sets", force: :cascade do |t|
+  create_table "graph_protocol_query_sets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name"
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "uuid"
-    t.index ["uuid"], name: "index_graph_protocol_query_sets_on_uuid", unique: true
   end
 
-  create_table "graph_protocol_tests", force: :cascade do |t|
-    t.string "uuid"
-    t.string "integer"
-    t.bigint "graph_protocol_query_set_id", null: false
+  create_table "graph_protocol_test_instances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "test_id"
+    t.integer "status", default: 0
+    t.datetime "started_at", precision: nil
+    t.datetime "finished_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["graph_protocol_query_set_id"], name: "index_graph_protocol_tests_on_graph_protocol_query_set_id"
-    t.index ["uuid"], name: "index_graph_protocol_tests_on_uuid", unique: true
+    t.index ["test_id"], name: "index_graph_protocol_test_instances_on_test_id"
   end
 
-  add_foreign_key "graph_protocol_tests", "graph_protocol_query_sets"
+  create_table "graph_protocol_tests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "query_set_id"
+    t.integer "query_limit"
+    t.integer "workers", default: 50
+    t.string "subgraphs", array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["query_set_id"], name: "index_graph_protocol_tests_on_query_set_id"
+  end
+
 end
