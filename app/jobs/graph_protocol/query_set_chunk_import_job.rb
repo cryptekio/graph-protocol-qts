@@ -1,7 +1,7 @@
 class GraphProtocol::QuerySetChunkImportJob < ApplicationJob
   queue_as :default
 
-  def perform(query_set_id:, chunk:)
+  def perform(import_id:)
     time = Time.now
     GraphProtocol::Util::Postgresql::Loader.execute(query_set_id: query_set_id) do |copy|
       chunk.split("\n").each do |line|

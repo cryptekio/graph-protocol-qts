@@ -4,10 +4,36 @@ module GraphProtocol
       class Importer
         def self.execute!(query_set_id: )
           query_set = GraphProtocol::QuerySet.find_by(:id => query_set_id)
-          import_qlog_from_s3_v2(query_set)
+          #import_qlog_from_s3_v2(query_set)
+          chunk_import_qlog_from_s3(query_set)
         end
 
         private
+
+          def self.chunk_import_qlog_from_s3(set)
+            size = GraphProtocol::Util::S3::ObjectProcessor.get_object_size(key: set.file_path)
+            chunk_size = GraphProtocol::Util::S3::ObjectProcessor.chunk_size
+            seq = 0
+            index = 0
+            set_status_importing(set)
+
+            while size > index
+              cfg = { query_set: set,
+                      sequence: seq,
+                      status: 0,
+                      range_start: index,
+                      range_end: index+chunk_size
+              }
+              import_job = GraphProtocol::QlogImport.new(cfg)
+              import_job.save
+
+              GraphProtocol::QlogS3ChunkImportJob.perform_later(import_id: import_job.id)
+
+              index += chunk_size+1
+              seq += 1
+            end
+
+          end
 
           def self.import_qlog_from_s3(set)
             begin

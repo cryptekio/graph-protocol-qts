@@ -61,6 +61,10 @@ module GraphProtocol
           object.get(**options)
         end
 
+        def self.chunk_size
+            ENV['AWS_S3_MAX_CHUNK_SIZE'].nil? ? 100000000 : ENV['AWS_S3_MAX_CHUNK_SIZE'].to_i*1000000 # 100mb default
+        end
+
         private
 
           def self.build_query_array(line:, query_set_id:, time:)
@@ -84,11 +88,6 @@ module GraphProtocol
 
           def self.bucket
             s3.bucket(ENV['AWS_S3_BUCKET'])
-          end
-
-
-          def self.chunk_size
-            ENV['AWS_S3_MAX_CHUNK_SIZE'].nil? ? 100000000 : ENV['AWS_S3_MAX_CHUNK_SIZE'].to_i*1000000 # 100mb default
           end
 
           def self.get_object_chunks(key: )

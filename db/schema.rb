@@ -10,10 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_10_120003) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_11_120113) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "graph_protocol_qlog_imports", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "query_set_id"
+    t.integer "sequence"
+    t.integer "status"
+    t.text "input"
+    t.text "remain"
+    t.datetime "started_at", precision: nil
+    t.datetime "finished_at", precision: nil
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "range_start"
+    t.bigint "range_end"
+    t.index ["query_set_id", "sequence"], name: "sort_by_sequence"
+    t.index ["query_set_id"], name: "index_graph_protocol_qlog_imports_on_query_set_id"
+  end
 
   create_table "graph_protocol_queries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "query_set_id"

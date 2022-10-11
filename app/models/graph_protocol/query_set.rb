@@ -1,5 +1,6 @@
 class GraphProtocol::QuerySet < ApplicationRecord
   has_many :queries, dependent: :destroy
+  has_many :qlog_imports
 
   QUERY_SET_STATUS = [:created,:importing,:ready,:failed]
 
