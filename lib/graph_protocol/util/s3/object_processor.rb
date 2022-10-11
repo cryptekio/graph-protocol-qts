@@ -19,12 +19,30 @@ module GraphProtocol
                 yield build_query_array(line: line,
                                         time: time,
                                         query_set_id: query_set_id)
-              end
                 buffer = remain
+              end
             end
 
           end
         end
+
+        def self.foreach_buffer_chunk(key:)
+          buffer = ""
+          get_object_chunks(key: key) do |chunk|
+            buffer = buffer + chunk.body.read
+            remain = true
+
+            until remain.nil?
+              last_line, remain = buffer.reverse.split("\n", 2)
+              unless remain.nil?
+                yield remain.reverse
+              end
+              buffer = last_line.reverse unless last_line.nil?
+            end
+
+          end
+        end
+
 
         def self.list_objects
           bucket.objects
