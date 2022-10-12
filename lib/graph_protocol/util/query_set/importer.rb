@@ -9,14 +9,21 @@ module GraphProtocol
 
         private
 
-          def self.import_qlog_from_s3(set)
+          def self.import_qlog_from_s3_v2(set)
             begin
-              s3_cfg = { :key => set.file_path, :query_set_id => set.id }
-              psql_cfg = { :query_set_id => set.id }
+              s3_cfg = { :key => set.file_path }
               set_status_importing(set)
-              GraphProtocol::Util::Postgresql::Loader.execute(**psql_cfg) do |copy|
-                GraphProtocol::Util::S3::ObjectProcessor.foreach_json(**s3_cfg) do |query|
-                  copy << query
+              buffer = ""
+              GraphProtocol::Util::S3::ObjectProcessor.get_object_chunks(**s3_cfg) do |chunk|
+                buffer = buffer + chunk.body.read
+                rindex = true
+                until rindex.nil?
+                  rindex = buffer.rindex("\n")
+                  unless rindex.nil?
+                    GraphProtocol::QuerySetChunkImportJob.perform_later(lines: buffer[0..rindex],
+                                                                        query_set_id: set.id)
+                    buffer = buffer[rindex+1..buffer.length-1]
+                  end
                 end
               end
               set_status_ready(set)
@@ -26,13 +33,21 @@ module GraphProtocol
             end
           end
 
-          def self.import_qlog_from_s3_v2(set)
+
+          def self.import_qlog_from_s3(set)
             begin
               s3_cfg = { :key => set.file_path }
               set_status_importing(set)
-              GraphProtocol::Util::S3::ObjectProcessor.foreach_buffer_chunk(**s3_cfg) do |chunk|
-                GraphProtocol::QuerySetChunkImportJob.perform_later(query_set_id: set.id,
-                                                                    chunk: chunk)
+              buffer = ""
+              GraphProtocol::Util::S3::ObjectProcessor.get_object_chunks(**s3_cfg) do |chunk|
+                buffer = buffer + chunk.body.read
+                remain = true
+                until remain.nil?
+                  last_line, remain = buffer.reverse.split("\n", 2)
+                  GraphProtocol::QuerySetChunkImportJob.perform_later(query_set_id: set.id,
+                                                                      lines: remain.reverse) unless remain.nil?
+                  buffer = last_line.reverse unless last_line.nil?
+                end
               end
 
             # wait to finish somehow, and update query offsets at the end

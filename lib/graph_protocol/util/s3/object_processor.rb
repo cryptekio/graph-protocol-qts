@@ -4,28 +4,6 @@ module GraphProtocol
       class ObjectProcessor
         @@s3 = nil
 
-        def self.foreach_json(key:, query_set_id:)
-          buffer = ""
-          get_object_chunks(key: key) do |chunk|
-
-            buffer = buffer + chunk.body.read
-            remain = true
-            result = []
-            time = Time.now
-
-            until remain.nil?
-              line, remain = buffer.split("\n",2)
-              unless remain.nil?
-                yield build_query_array(line: line,
-                                        time: time,
-                                        query_set_id: query_set_id)
-                buffer = remain
-              end
-            end
-
-          end
-        end
-
         def self.foreach_buffer_chunk(key:)
           buffer = ""
           get_object_chunks(key: key) do |chunk|
