@@ -2,61 +2,65 @@ module GraphProtocol
   module Util
     module QuerySet
       class Importer
-        def self.execute!(query_set_id: )
-          query_set = GraphProtocol::QuerySet.find_by(:id => query_set_id)
-          import_qlog_from_s3_v2(query_set)
+
+        def self.schedule_import_job(query_set:, range_start: 0, object_size:)
+          GraphProtocol::QuerySetChunkImportJob.perform_later(
+            range_start: range_start,
+            query_set_id: query_set.id,
+            object_size: object_size,
+            chunk_size: GraphProtocol::Util::S3::ObjectProcessor.chunk_size
+          )
         end
 
-        private
+        def self.import_qlog_chunk_from_s3(query_set:, range_start:, object_size:, chunk_size:)
+          query_set_id = query_set.id
+          range_end = range_start + chunk_size
 
-          def self.import_qlog_from_s3_v2(set)
-            begin
-              s3_cfg = { :key => set.file_path }
-              set_status_importing(set)
-              buffer = ""
-              GraphProtocol::Util::S3::ObjectProcessor.get_object_chunks(**s3_cfg) do |chunk|
-                buffer = buffer + chunk.body.read
-                rindex = true
-                until rindex.nil?
-                  rindex = buffer.rindex("\n")
-                  unless rindex.nil?
-                    GraphProtocol::QuerySetChunkImportJob.perform_later(lines: buffer[0..rindex],
-                                                                        query_set_id: set.id)
-                    buffer = buffer[rindex+1..buffer.length-1]
-                  end
-                end
+          puts "Fetching buffer: start: #{range_start}, end: #{range_end} object_size: #{object_size}"
+
+          args = { key: query_set.file_path,
+                   range_start: range_start,
+                   range_end: range_end }
+          buffer = GraphProtocol::Util::S3::ObjectProcessor.get_object(args).body.read
+
+          rindex = buffer.rindex("\n")
+          next_range_start = rindex.nil? ? range_start : range_start+rindex+1
+
+          schedule_import_job(query_set: query_set,
+                              range_start: next_range_start,
+                              object_size: object_size
+                             ) unless range_end >= object_size
+
+          return if rindex.nil?
+
+          time = Time.now
+          lines = buffer[0..rindex-1].split("\n")
+          GraphProtocol::Util::Postgresql::Loader.execute!(query_set_id: query_set_id) do |copy|
+            lines.each_with_index do |line, index|
+              begin
+                copy << build_query_array(query_set_id: query_set_id,
+                                          time: time,
+                                          line: line)
+              rescue JSON::ParserError
+                puts "Index: #{index}"
+                puts "Line: #{line}"
               end
-              set_status_ready(set)
-            #rescue Exception => exc
-            #  puts exc.message
-            #  set_status_failed(set)
+
             end
           end
 
+        end
 
-          def self.import_qlog_from_s3(set)
-            begin
-              s3_cfg = { :key => set.file_path }
-              set_status_importing(set)
-              buffer = ""
-              GraphProtocol::Util::S3::ObjectProcessor.get_object_chunks(**s3_cfg) do |chunk|
-                buffer = buffer + chunk.body.read
-                remain = true
-                until remain.nil?
-                  last_line, remain = buffer.reverse.split("\n", 2)
-                  GraphProtocol::QuerySetChunkImportJob.perform_later(query_set_id: set.id,
-                                                                      lines: remain.reverse) unless remain.nil?
-                  buffer = last_line.reverse unless last_line.nil?
-                end
-              end
+        private
+          def self.build_query_array(line:, query_set_id:, time:)
+            json_output = parsed_json(line)
+            [json_output[:subgraph], { :query => json_output[:query] }.to_json, json_output[:variables], json_output[:timestamp], time, time, query_set_id]
+          end
 
-            # wait to finish somehow, and update query offsets at the end
-             
-              set_status_ready(set)
-            #rescue Exception => exc
-            #  puts exc.message
-            #  set_status_failed(set)
-            end
+          def self.parsed_json(line)
+            parsed_data = JSON.parse(line.chomp, symbolize_names: true).except(:block, :time, :query_id)
+            parsed_data[:timestamp] = DateTime.parse(parsed_data[:timestamp]).to_f
+            parsed_data
           end
 
           def self.set_status_importing(query_set)

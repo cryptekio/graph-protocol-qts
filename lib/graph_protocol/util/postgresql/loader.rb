@@ -3,7 +3,7 @@ module GraphProtocol
     module Postgresql
       class Loader
 
-        def self.execute(query_set_id:)
+        def self.execute!(query_set_id:)
           GraphProtocol::Query.copy_from_client [:subgraph, :query, :variables, :timestamp, :created_at, :updated_at, :query_set_id] do |copy|
             yield copy
           end

@@ -1,27 +1,16 @@
 class GraphProtocol::QuerySetChunkImportJob < ApplicationJob
   queue_as :default
 
-  def perform(query_set_id:, lines:)
-    time = Time.now
-    GraphProtocol::Util::Postgresql::Loader.execute(query_set_id: query_set_id) do |copy|
-      lines.split("\n").each do |line|
-        copy << build_query_array(query_set_id: query_set_id,
-                                  time: time,
-                                  line: line)
-      end
-    end
+  def perform(query_set_id:, range_start:, object_size:, chunk_size:)
+    query_set = GraphProtocol::QuerySet.find_by(:id => query_set_id)
+
+    GraphProtocol::Util::QuerySet::Importer.import_qlog_chunk_from_s3(
+      query_set: query_set,
+      range_start: range_start,
+      object_size: object_size,
+      chunk_size: chunk_size
+    )
+
   end
 
-  private
-
-    def build_query_array(line:, query_set_id:, time:)
-      json_output = parsed_json(line)
-      [json_output[:subgraph], { :query => json_output[:query] }.to_json, json_output[:variables], json_output[:timestamp], time, time, query_set_id]
-    end
-
-    def parsed_json(line)
-      parsed_data = JSON.parse(line.chomp, symbolize_names: true).except(:block, :time, :query_id)
-      parsed_data[:timestamp] = DateTime.parse(parsed_data[:timestamp]).to_f
-      parsed_data
-    end
 end

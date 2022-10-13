@@ -16,7 +16,9 @@ class GraphProtocol::QuerySetController < ApplicationController
     query_set.status = :created
     query_set.save
 
-    GraphProtocol::QuerySetImportJob.perform_later(:query_set_id => query_set.id)
+    size = GraphProtocol::Util::S3::ObjectProcessor.get_object_size(key: query_set.file_path)
+    GraphProtocol::Util::QuerySet::Importer.schedule_import_job(
+                                                    query_set: query_set, object_size: size)
 
     render :json => query_set
   end
