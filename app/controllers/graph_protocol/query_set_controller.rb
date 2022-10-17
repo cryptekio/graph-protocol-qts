@@ -10,15 +10,13 @@ class GraphProtocol::QuerySetController < ApplicationController
       :description => params[:description] || nil,
       :query_set_type => params[:query_set_type], #qlog
       :import_type => params[:import_type], # s3
-      :file_path => params[:file_path] #s3 object key
+      :file_path => params[:file_path], #s3 object key
+      :status => 0
     }
-    query_set = GraphProtocol::QuerySet.new(cfg)
-    query_set.status = :created
-    query_set.save
-
-    size = GraphProtocol::Util::S3::ObjectProcessor.get_object_size(key: query_set.file_path)
-    GraphProtocol::Util::QuerySet::Importer.schedule_import_job(
-                                                    query_set: query_set, object_size: size)
+    query_set = GraphProtocol::QuerySet.create(cfg)
+    import = GraphProtocol::QlogImport.create(query_set: query_set,
+                                              status: 0)
+    import.initiate!
 
     render :json => query_set
   end

@@ -3,11 +3,13 @@ module GraphProtocol
     module QuerySet
       class Importer
 
-        def self.schedule_import_job(query_set:, range_start: 0, object_size:)
+        def self.schedule_import_job(query_set:, range_start: 0, object_size: nil)
+          size = object_size.nil? GraphProtocol::Util::S3::ObjectProcessor.get_object_size(key: query_set.file_path) : object_size
+
           GraphProtocol::QuerySetChunkImportJob.perform_later(
             range_start: range_start,
             query_set_id: query_set.id,
-            object_size: object_size,
+            object_size: size,
             chunk_size: GraphProtocol::Util::S3::ObjectProcessor.chunk_size
           )
         end
@@ -27,11 +29,12 @@ module GraphProtocol
           schedule_import_job(query_set: query_set,
                               range_start: next_range_start,
                               object_size: object_size
-                             ) unless range_end >= object_size
+                             ) unless range_end >= object_size # and already scheduled?
 
           return if rindex.nil?
 
-          lines = buffer.byteslice(0,rindex).split("\n")
+          #lines = buffer.byteslice(0,rindex).split("\n")
+          lines = buffer.byteslice(0,rindex)
           write_queries(lines, query_set_id)
 
         end
@@ -41,11 +44,19 @@ module GraphProtocol
           def self.write_queries(lines, query_set_id)
             time = Time.now
             GraphProtocol::Util::Postgresql::Loader.execute!(query_set_id: query_set_id) do |copy|
-              lines.each_with_index do |line, index|
+              slice_by_newline(lines) do |line|
                 copy << build_query_array(query_set_id: query_set_id,
                                           time: time,
                                           line: line)
               end
+            end
+          end
+
+          def self.slice_by_newline(buffer)
+            result, remain = buffer.split("\n",2)
+            until remain.nil?
+              yield result
+              result, remain = remain.split("\n",2)
             end
           end
 
