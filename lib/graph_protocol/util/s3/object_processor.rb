@@ -53,10 +53,14 @@ module GraphProtocol
           end
 
           def self.s3
-            client = Aws::S3::Client.new(retry_limit: 12,
-                                         retry_backoff: lambda { |c| sleep(5) })
+            client_config = {
+              retry_limit: 5,
+              retry_backoff: lambda { |c| sleep(5) }
+            }
+            client_config[:endpoint] = ENV['AWS_S3_ENDPOINT'] if ENV['AWS_S3_ENDPOINT']
+            client = Aws::S3::Client.new(**client_config)
             config = {:client => client}
-            config[:endpoint] = ENV['AWS_S3_ENDPOINT'] if ENV['AWS_S3_ENDPOINT']
+
             @@s3 ||= Aws::S3::Resource.new(**config)
           end
 
