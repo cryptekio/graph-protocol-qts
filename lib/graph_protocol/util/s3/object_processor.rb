@@ -30,11 +30,11 @@ module GraphProtocol
           bucket.object(key).size
         end
 
-        def self.get_object(args)
-          object = bucket.object(args[:key])
+        def self.get_object(key:, range_start: nil, range_end: nil)
+          object = bucket.object(key)
 
           options = {}
-          options = { range: "bytes=#{args[:range_start]}-#{args[:range_end]}" } if args[:range_start] and args[:range_end]
+          options = { range: "bytes=#{range_start}-#{range_end}" } if range_start and range_end
 
           object.get(**options)
         end
@@ -53,7 +53,7 @@ module GraphProtocol
           end
 
           def self.s3
-            client = Aws::S3::Client.new(retry_limit: 12,
+            client = Aws::S3::Client.new(retry_limit: 5,
                                          retry_backoff: lambda { |c| sleep(5) })
             config = {:client => client}
             config[:endpoint] = ENV['AWS_S3_ENDPOINT'] if ENV['AWS_S3_ENDPOINT']
@@ -79,7 +79,7 @@ module GraphProtocol
                 range_start: index,
                 range_end: index+chunk_size
               }
-              yield get_object(opts)
+              yield get_object(**opts)
               index += chunk_size+1
             end 
 
