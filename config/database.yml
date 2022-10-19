@@ -8,20 +8,19 @@ default: &default
   adapter: postgresql 
   encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 20 } %>
+  port: 5432
+  host: <%= ENV.fetch("POSTGRES_HOST") { "localhost" } %>
+  username: <%= ENV.fetch("POSTGRES_USERNAME") { "rails" } %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD") %>
 
 development:
   <<: *default
-  database: graph_protocol_qts_dev
-  username: rails
-  password: EDGk5vCM9b57
+  database: <%= ENV.fetch("POSTGRES_DATABASE") { "graph_protocol_qts_dev" } %>
 
-# Warning: The database defined as "test" will be erased and
-# re-generated from your development database when you run "rake".
-# Do not set this db to the same as development or production.
 test:
   <<: *default
-  database: graph_protocol_qts_test
+  database: <%= ENV.fetch("POSTGRES_DATABASE") { "graph_protocol_qts_test" } %>
 
 production:
   <<: *default
-  database: graph_protocol_qts_prod 
+  database: <%= ENV.fetch("POSTGRES_DATABASE") { "graph_protocol_qts_prod" } %>
