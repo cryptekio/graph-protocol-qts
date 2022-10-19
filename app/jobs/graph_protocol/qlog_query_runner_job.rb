@@ -2,9 +2,10 @@ class GraphProtocol::QlogQueryRunnerJob < ApplicationJob
   queue_as :default
   sidekiq_options retry: false
 
-  def perform(args = {})
-    processor = GraphProtocol::Util::Qlog::RequestProcessor.new
-    processor.execute(args) 
+  def perform(test_instance_id, offset, limit)
+    processor = GraphProtocol::Util::Qlog::RequestProcessor.new(test_instance_id,
+                                                                offset, limit)
+    processor.execute
   end
 
 end

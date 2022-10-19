@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_10_120003) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_18_112710) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -39,6 +39,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_10_120003) do
     t.string "import_type", null: false
     t.string "file_path", null: false
     t.string "query_set_type", null: false
+    t.bigint "object_size"
   end
 
   create_table "graph_protocol_test_instances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -52,10 +53,12 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_10_120003) do
   end
 
   create_table "graph_protocol_tests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "query_set_id"
+    t.uuid "query_set_id", null: false
     t.integer "query_limit"
-    t.integer "workers", default: 50
-    t.string "subgraphs", array: true
+    t.integer "workers", default: 50, null: false
+    t.string "subgraphs", default: [], array: true
+    t.integer "chunk_size", default: 1000
+    t.boolean "sleep_enabled", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["query_set_id"], name: "index_graph_protocol_tests_on_query_set_id"

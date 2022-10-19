@@ -6,7 +6,8 @@ Rails.application.routes.draw do
 
   post '/tests', to: 'graph_protocol/tests#create'
   get '/tests', to: 'graph_protocol/tests#index'
-  get '/tests/:uuid', to: 'graph_protocol/tests#show'
+  get '/tests/:id', to: 'graph_protocol/tests#show'
+  post '/tests/:id/run', to: 'graph_protocol/tests#run'
 
   get '/querysets', to: 'graph_protocol/query_set#index'
   post '/queryset', to: 'graph_protocol/query_set#create'

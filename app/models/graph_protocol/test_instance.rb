@@ -3,12 +3,16 @@ class GraphProtocol::TestInstance < ApplicationRecord
 
   TEST_STATUS = [:created,:stopped,:running,:finished,:failed]
 
-  def status
+  def get_status
     TEST_STATUS[read_attribute(:status)]
   end
 
-  def status=(new_status)
-    write_attribute(:status,TEST_STATUS.find_index(new_status))
+  def set_status=(new_status)
+    update_attribute(:status,TEST_STATUS.find_index(new_status))
+  end
+
+  def run
+    GraphProtocol::Util::Qlog::RequestLoader.execute(self)
   end
 
 end

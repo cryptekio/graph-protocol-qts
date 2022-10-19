@@ -1,3 +1,7 @@
+require 'async/http/internet/instance' 
+require 'async/barrier'
+require 'async/semaphore'
+
 module GraphProtocol
   module Util
     module Qlog 
@@ -5,11 +9,12 @@ module GraphProtocol
         include Helpers
         include WorkerManager
 
-        attr_accessor :test_instance_id
+        def initialize(test_instance_id, offset, limit)
+          @instance = GraphProtocol::TestInstance.find_by(id: test_instance_id)
+          @config = build_config(@instance, offset, limit)
+        end
 
-        def execute(args = {})
-
-          @test_instance_id = args[:test_instance_id]
+        def execute
 
           set_start_time
           increase_workers_count
@@ -18,12 +23,12 @@ module GraphProtocol
           Async do
             internet = Async::HTTP::Internet.instance
             barrier = Async::Barrier.new
-            semaphore = Async::Semaphore.new(args[:workers], parent: barrier)
+            semaphore = Async::Semaphore.new(@instance.test.workers, parent: barrier)
 
-            queries(args).each do |query|
+            queries(@config).each do |query|
               semaphore.async do
 
-                sleep_until_ready(query, args, start_time)
+                sleep_until_ready(query, @instance.test.sleep_enabled, start_time)
                 result = internet.post(*build_request(query))
 
                 unless result.success?
@@ -44,10 +49,17 @@ module GraphProtocol
 
         end
 
-        private
-
           def redis
             @redis_client ||= Redis.new(url: ENV['REDIS_URL'] || 'redis://127.0.0.1')
+          end
+
+        private
+          def build_config(instance, offset, limit)
+            { :query_set_id => instance.test.query_set.id,
+              :test_instance_id => instance.id,
+              :limit => limit,
+              :query_range_start => offset,
+              :subgraphs => instance.test.subgraphs.empty? ? false : instance.test.subgraphs } 
           end
 
           def build_request(query)
@@ -57,9 +69,9 @@ module GraphProtocol
             [url, headers, request_body_json(query)]
           end
 
-          def sleep_until_ready(query, args, start_time)
+          def sleep_until_ready(query, sleep_enabled, start_time)
             offset = get_remaining_offset(query[:offset], start_time)
-            sleep offset if args[:sleep_enabled]
+            sleep offset if sleep_enabled 
           end
 
           def get_remaining_offset(query_offset = 0.0, start_time)
