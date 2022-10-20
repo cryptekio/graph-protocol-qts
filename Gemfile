@@ -8,6 +8,7 @@ gem 'sidekiq'
 gem 'async-http'
 gem 'thread-local'
 gem 'aws-sdk-s3'
+gem 'zlib'
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.0.3", ">= 7.0.3.1"

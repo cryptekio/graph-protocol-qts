@@ -6,26 +6,34 @@ class GraphProtocol::TestsController < ApplicationController
   end
 
   def create
-    cfg = { query_set_id: params[:query_set_id],
-            subgraphs: params[:subgraphs] || [],
-            query_limit: params[:query_limit],
-            workers: params[:workers] || 50 }
-    response = GraphProtocol::Test.create(cfg)
+    response = GraphProtocol::Test.create(test_params)
     render :json => response 
   end
 
   def show
-    response = GraphProtocol::Test.find_by(id: params[:id])
+    response = GraphProtocol::Test.find_by(id: test_id)
     render :json => response
   end
 
   def run
-    test = GraphProtocol::Test.find_by(id: params[:id])
+    test = GraphProtocol::Test.find_by(id: test_id)
     instance = test.test_instances.create
 
     instance.run
 
     render :json => instance
+  end
+
+  private
+
+  def test_id
+    params.require(:id)
+  end
+
+  def test_params
+    params.require(:test).permit(:query_set_id,
+                                 :subgraphs,
+                                 :query_limit)
   end
 
 end

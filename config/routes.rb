@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   post '/tests/:id/run', to: 'graph_protocol/tests#run'
 
   get '/querysets', to: 'graph_protocol/query_set#index'
-  post '/queryset', to: 'graph_protocol/query_set#create'
+  get '/querysets/:id', to: 'graph_protocol/query_set#show'
+  post '/querysets', to: 'graph_protocol/query_set#create'
 
 end

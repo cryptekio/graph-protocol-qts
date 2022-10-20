@@ -1,84 +1,120 @@
 module GraphProtocol
   module Util
     module QuerySet
+
+      class ImporterError < StandardError; end
+      class ImporterS3Error < ImporterError 
+        def message
+          "Error while communicating with S3"
+        end
+      end
+      class ImporterGzipError < ImporterError 
+        def message
+          "Unable to extract gzip archive"
+        end
+      end
+      class ImporterS3CredentialsError < ImporterError
+        def message
+          "Invalid or missing S3 credentials"
+        end
+      end
+      class ImporterS3NoSuchFile < ImporterError
+        def message
+          "File not found in S3"
+        end
+      end
+
+
       class Importer
 
-        def self.schedule_import_job(query_set:, range_start: 0, object_size:)
-          GraphProtocol::QuerySetChunkImportJob.perform_later(
-            range_start: range_start,
-            query_set_id: query_set.id,
-            object_size: object_size,
-            chunk_size: GraphProtocol::Util::S3::ObjectProcessor.chunk_size
-          )
-        end
-
-        def self.import_qlog_chunk_from_s3(query_set:, range_start:, object_size:, chunk_size:)
-          query_set_id = query_set.id
-          range_end = range_start + chunk_size-1
-
-          args = { key: query_set.file_path,
-                   range_start: range_start,
-                   range_end: range_end }
-          buffer = GraphProtocol::Util::S3::ObjectProcessor.get_object(args).body.read
-
-          rindex = buffer.bytes.rindex(10) # 10 == \n 
-          next_range_start = rindex.nil? ? range_start : range_start+rindex+1
-
-          schedule_import_job(query_set: query_set,
-                              range_start: next_range_start,
-                              object_size: object_size
-                             ) unless range_end >= object_size
-
-          return if rindex.nil?
-
-          lines = buffer.byteslice(0,rindex).split("\n")
-          write_queries(lines, query_set_id)
-
-        end
-
-        private
-
-          def self.write_queries(lines, query_set_id)
+        def self.execute!(query_set)
+          begin
             time = Time.now
-            GraphProtocol::Util::Postgresql::Loader.execute!(query_set_id: query_set_id) do |copy|
-              lines.each_with_index do |line, index|
-                copy << build_query_array(query_set_id: query_set_id,
-                                          time: time,
-                                          line: line)
+            tmp_file = s3_download(query_set)
+
+            import_to_psql(query_set) do |copy|
+              read_gzip_by_line(tmp_file) do |line|
+                write_query(query_set_id: query_set.id,
+                            psql_handler: copy,
+                            time: time,
+                            line: line)
               end
             end
+
+          rescue Aws::S3::Errors::InvalidAccessKeyId
+            raise ImporterS3CredentialsError
+          rescue Aws::S3::Errors::NoSuchKey
+            raise ImporterS3NoSuchFile
+          rescue Aws::Sigv4::Errors::MissingCredentialsError
+            raise ImporterS3CredentialsError
+          rescue Seahorse::Client::NetworkingError
+            raise ImporterS3Error
+          rescue Zlib::GzipFile::Error
+            raise ImporterGzipError
+
+          ensure
+            cleanup(tmp_file) if tmp_file
+          end
+        end
+
+        def self.cleanup(tmp_file)
+          File.delete(tmp_file) if File.exists?(tmp_file)
+        end
+
+        def self.s3_download(query_set)
+          key = query_set.file_path
+          tmp_file = tmp_dir + "/import_" + rand(36**12).to_s(36)
+
+          File.open(tmp_file, 'wb') do |file|
+            GraphProtocol::Util::S3::ObjectProcessor.download_file(key: key, file: file)
           end
 
-          def self.build_query_array(line:, query_set_id:, time:)
-            json_output = parsed_json(line)
-            [json_output[:subgraph], { :query => json_output[:query] }.to_json, json_output[:variables], json_output[:timestamp], time, time, query_set_id]
-          end
+          tmp_file
+        end
 
-          def self.parsed_json(line)
-            begin
-              parsed_data = JSON.parse(line.chomp, symbolize_names: true).except(:block, :time, :query_id)
-              parsed_data[:timestamp] = DateTime.parse(parsed_data[:timestamp]).to_f
-              parsed_data
-            rescue JSON::ParserError
-              puts "Failed to parse query: #{line.chomp}"
-              {}
+        def self.read_gzip_by_line(file)
+          Zlib::GzipReader.open(file) do |gz|
+            gz.each_line do |line|
+              yield line
             end
           end
+        end
 
-          def self.set_status_importing(query_set)
-            query_set.status = :importing
-            query_set.save
+        def self.read_file_by_line(file)
+          File.readlines(file).each do |line|
+            yield line
           end
+        end
 
-          def self.set_status_ready(query_set)
-            query_set.status = :ready
-            query_set.save
-          end
+        def self.tmp_dir
+          ENV['TMP_DIR'] || '/tmp/imports'
+        end
 
-          def self.set_status_failed(query_set)
-            query_set.status = :failed
-            query_set.save
+        def self.import_to_psql(query_set)
+          GraphProtocol::Util::Postgresql::Loader.execute!(query_set_id: query_set.id) do |copy|
+            yield copy
           end
+        end
+
+        def self.write_query(psql_handler:, line:, query_set_id:, time:)
+          begin
+            psql_handler << build_query_array(line: parse_json(line),
+                                              query_set_id: query_set_id,
+                                              time: time)
+          rescue JSON::ParserError
+            return true 
+          end
+        end
+
+        def self.build_query_array(line:, query_set_id:, time:)
+          [line[:subgraph], { :query => line[:query] }.to_json, line[:variables], line[:timestamp], time, time, query_set_id]
+        end
+
+        def self.parse_json(line)
+          parsed_data = JSON.parse(line.chomp, symbolize_names: true).except(:block, :time, :query_id)
+          parsed_data[:timestamp] = DateTime.parse(parsed_data[:timestamp]).to_f
+          parsed_data
+        end
 
       end
     end

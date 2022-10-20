@@ -7,7 +7,7 @@ class GraphProtocol::TestInstance < ApplicationRecord
     TEST_STATUS[read_attribute(:status)]
   end
 
-  def set_status=(new_status)
+  def set_status(new_status)
     update_attribute(:status,TEST_STATUS.find_index(new_status))
   end
 

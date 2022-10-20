@@ -20,7 +20,7 @@ module GraphProtocol
 
         def set_start_time
           if redis.set(start_time_key, current_time, nx: true)
-            @instance.set_status = :running
+            @instance.set_status :running
           end
         end
 
@@ -32,7 +32,7 @@ module GraphProtocol
         def check_workers_and_set_end_time
           if get_workers_count == 0
             redis.set(end_time_key, current_time, nx: true)
-            @instance.set_status = :finished
+            @instance.set_status :finished
             # check if previous set returns false (if yes raise exception)
           end
         end

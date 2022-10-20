@@ -23,6 +23,7 @@ services:
     build: .
     volumes:
       - .:/myapp
+      - tmp-vol:/tmp/imports
     links:
       - postgres
       - redis
@@ -46,3 +47,4 @@ services:
 volumes:
   postgres-db:
   redis-db:
+  tmp-vol:

@@ -1,26 +1,34 @@
 class GraphProtocol::QuerySetController < ApplicationController
+
   def index
     response = GraphProtocol::QuerySet.all
     render :json => response
   end
 
-  def create
-    cfg = {
-      :name => params[:name] || nil,
-      :description => params[:description] || nil,
-      :query_set_type => params[:query_set_type], #qlog
-      :import_type => params[:import_type], # s3
-      :file_path => params[:file_path] #s3 object key
-    }
-    query_set = GraphProtocol::QuerySet.new(cfg)
-    query_set.status = :created
-    query_set.save
+  def show
+    set = GraphProtocol::QuerySet.find_by(id: query_set_id)
 
-    size = GraphProtocol::Util::S3::ObjectProcessor.get_object_size(key: query_set.file_path)
-    GraphProtocol::Util::QuerySet::Importer.schedule_import_job(
-                                                    query_set: query_set, object_size: size)
+    render :json => set
+  end
+
+  def create
+    query_set = GraphProtocol::QuerySet.create(query_set_params)
 
     render :json => query_set
+  end
+
+  private
+
+  def query_set_id
+    params.require(:id)
+  end
+
+  def query_set_params
+    params.require(:query_set).permit(:name,
+                                      :description,
+                                      :query_set_type,
+                                      :import_type,
+                                      :file_path)
   end
 
 end
