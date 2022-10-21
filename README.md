@@ -1,44 +1,54 @@
 # Graph Protocol Query Testing Service
-The purpose of this app is to be used as a stress-testing tool for The Graph Gateway and any indexers behind it. It consumes qlog queries from the hosted graph service and can replay them on-demand. It is fully configurable and controlled via API calls.
 
-## Setting up
+The aim of this application is to provide a way to stress-test The Graph gateway and any indexers behind it. It functions by consuming historical qlog query data (currently provided from the hosted graph service), and replays them ondemand against the selected gateway. It is an intependent service that can be controlled via API calls.
 
-The app consists of the following components:
- - The main web API for receiving requests
- - Async workers for replaying queries
- - PostgreSQL databases for storing queries
- - Redis db for managing the worker queues
+## System Requirements
 
-We provide a sample Dockerfile and a docker-compose template that can be used for deploying the app. To start, clone the repo, and cd into the directory.
+System requirements will vary depending on the load you are putting on the app. Based on the qlog datasets we received from the team during development (2-4GB in size, unpacked), we recommend the following optimal specs:
 
-One should first set up the environment variables either through the `.env` file or by exporting them directly. Following variables are supported:
+- At least 4 vCPUs (cores) for proper multithreading support
+- At least 16 GB of RAM memory
+- Relatively fast disks (nvme preferred) with enough disk space to store all the datasets you intended to load + enough disk space to be used as temporary space when downloading datasets from S3
+- Preferably at least 1 gbit uplink
 
+As a reference, during development we've used a machine with the following specs:
+
+- 2x Micron 5200 SSDs in RAID1,
+- Intel Core i7-4770 CPU
+- 32 GB of ram
+- 1gbit uplink with unlimited bandwidth
+
+**Note: While the app is fully capable of running standalone, the reference implementation assumes you will be running it in Docker, using the provided docker-compose.yml file. **
+
+## Getting started
+
+1. To start, clone the repo and cd into the directory:
+
+```sh
+git clone git@github.com:cryptekio/graph-protocol-qts.git
+cd graph-protocol-qts
 ```
-GRAPH_GATEWAY_API_KEY="GATEWAY_KEY_HERE"
-GRAPH_GATEWAY_URL="https://gateway.testnet.thegraph.com"
-AWS_ACCESS_KEY_ID="ACCESS_KEY_HERE"
-AWS_SECRET_ACCESS_KEY="SECRET_KEY_HERE"
-AWS_S3_ENDPOINT="https://gateway.storjshare.io"
-AWS_S3_BUCKET="gnosis-chain"
-AWS_S3_MAX_CHUNK_SIZE=16
-RAILS_MAX_THREADS=20
-TMP_DIR="/tmp/imports"
-AWS_REGION="us-west-2"
-REDIS_URL="redis://redis"
-POSTGRES_HOST=postgres
-POSTGRES_USER=rails
-POSTGRES_PASSWORD="POSTGRES_PASSWORD_HERE"
+
+2. Build the necessary docker containers:
+
+```sh
+docker compose build
 ```
 
-Once env variables have been set up, you can run docker compose:
+3. You will likely want to configure some environment variables before proceeding, see [Variables](docs/variables.md) for more information.
 
-`# docker compose up --build`
+4. Run database migrations to prepare postgresql for writing:
 
-This will build out the necessary docker images and start the containers. However, we still need to initialize the database, so press CTRL+C to get back into the terminal and run the following:
+```sh
+docker compose run web rake db:reset
+docker compose run web rake db:migrate
+```
 
-`# docker compose run web rake db:reset`
-`# docker compose run web rake db:migrate`
+5. Finally, start the application 
 
-If those succeed, the database connection works and the schema has been set up, so we can run the application now:
+```sh
+docker compose up
+```
 
-`# docker compose up`
+## Controlling the app
+Refer to the [API reference document](docs/api.md) on how to manage the app, upload datasets, start tests, etc.
