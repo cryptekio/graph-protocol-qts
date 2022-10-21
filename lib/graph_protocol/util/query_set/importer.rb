@@ -2,6 +2,8 @@ module GraphProtocol
   module Util
     module QuerySet
 
+      class NotReady < StandardError; end
+
       class ImporterError < StandardError; end
       class ImporterS3Error < ImporterError 
         def message

@@ -5,23 +5,24 @@ class GraphProtocol::Test < ApplicationRecord
   before_validation :set_default_values, on: :create
 
   def json_print
-    self.slice(:query_set_id,
+    self.slice(:id,
+               :query_set_id,
                :subgraphs,
                :chunk_size,
-               :sleep_enabled).merge({:instances => instance_ids})
+               :sleep_enabled).merge({:instances => instance_preview})
   end
 
-  def instance_ids
+  def instance_preview
     result = []
     self.instances.each do |instance|
-      result << instance.id
+      result << { instance.id => instance.get_status }
     end
     result
   end
 
   def set_default_values
     self.subgraphs = [] if self.subgraphs.nil?
-    self.chunk_size = 1000 if self.chunksize.blank?
+    self.chunk_size = 1000 if self.chunk_size.blank?
     self.sleep_enabled = true if self.sleep_enabled.nil?
   end
 

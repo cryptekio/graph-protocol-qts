@@ -30,9 +30,15 @@ class GraphProtocol::QuerySetController < ApplicationController
   end
 
   def delete
-    query_set = GraphProtocol::QuerySet.create(query_set_params)
+    query_set = GraphProtocol::QuerySet.find_by(id: query_set_id)
 
     unless query_set.nil?
+
+      if used_by_tests?(query_set)
+        print_error(error: "Cannot delete query set #{query_set.id}: it is currently part of a test definition")
+        return
+      end
+
       query_set.set_status :deleted
       GraphProtocol::DeleteQuerySetJob.perform_later(query_set_id: query_set)
     end
@@ -41,6 +47,10 @@ class GraphProtocol::QuerySetController < ApplicationController
   end
 
   private
+
+  def used_by_tests?(query_set)
+    GraphProtocol::Test.where(query_set_id: query_set.id).count > 0
+  end
 
   def query_set_id
     params.require(:id)

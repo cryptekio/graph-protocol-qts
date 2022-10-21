@@ -8,6 +8,8 @@ Rails.application.routes.draw do
   get '/tests', to: 'graph_protocol/tests#index'
   get '/tests/:id', to: 'graph_protocol/tests#show'
   post '/tests/:id/run', to: 'graph_protocol/tests#run'
+  delete '/tests/:id', to: 'graph_protocol/tests#delete'
+  get '/tests/:id/instance/:iid', to: 'graph_protocol/tests/instance#show'
 
   get '/querysets', to: 'graph_protocol/query_set#index'
   get '/querysets/:id', to: 'graph_protocol/query_set#show'

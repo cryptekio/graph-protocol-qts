@@ -24,11 +24,32 @@ class GraphProtocol::TestsController < ApplicationController
 
   def run
     test = GraphProtocol::Test.find_by(id: test_id)
-    instance = test.instances.create
 
-    instance.run
+    unless test.nil?
+      begin
+        instance = test.instances.create
+      rescue GraphProtocol::Util::QuerySet::NotReady
+        print_error(error: "Cannot run test: query set is not ready.")
+        return
+      end
+    end
 
     print_json(instance)
+  end
+
+  def delete
+    test = GraphProtocol::Test.find_by(id: test_id)
+
+    unless test.nil?
+      test.instances.each do |instance|
+        if instance.get_status == :running
+          print_error(error: "Cannot delete test #{test_id}: instance of it is currently running.")
+          return
+        end
+      end
+      test.destroy
+    end
+    print_json(test)
   end
 
   private
