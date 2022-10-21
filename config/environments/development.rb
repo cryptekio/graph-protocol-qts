@@ -3,13 +3,15 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  Dotenv::Railtie.load
+
   # In the development environment your application's code is reloaded any time
   # it changes. This slows down response time but is perfect for development
   # since you don't have to restart the web server when you make code changes.
   config.cache_classes = false
 
   # Do not eager load code on boot.
-  config.eager_load = false
+  config.eager_load = true 
 
   # Show full error reports.
   config.consider_all_requests_local = true
@@ -30,6 +32,8 @@ Rails.application.configure do
     config.cache_store = :null_store
   end
 
+  # set log level
+  #config.log_level = :warn
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
