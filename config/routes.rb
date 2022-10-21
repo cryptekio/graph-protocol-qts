@@ -12,5 +12,7 @@ Rails.application.routes.draw do
   get '/querysets', to: 'graph_protocol/query_set#index'
   get '/querysets/:id', to: 'graph_protocol/query_set#show'
   post '/querysets', to: 'graph_protocol/query_set#create'
+  post '/querysets/:id/reimport', to: 'graph_protocol/query_set#reimport'
+  delete '/querysets/:id', to: 'graph_protocol/query_set#delete'
 
 end

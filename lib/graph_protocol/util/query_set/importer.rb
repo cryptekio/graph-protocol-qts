@@ -24,13 +24,22 @@ module GraphProtocol
         end
       end
 
+      class ImporterInterrupt < ImporterError
+        def message
+          "Import job canceled"
+        end
+      end
+
+
 
       class Importer
 
-        def self.execute!(query_set)
+        def self.execute!(query_set, reimport: true)
           begin
             time = Time.now
             tmp_file = s3_download(query_set)
+
+            clear_old_queries(query_set) if reimport
 
             import_to_psql(query_set) do |copy|
               read_gzip_by_line(tmp_file) do |line|
@@ -41,6 +50,8 @@ module GraphProtocol
               end
             end
 
+          rescue SignalException
+            raise ImporterInterrupt
           rescue Aws::S3::Errors::InvalidAccessKeyId
             raise ImporterS3CredentialsError
           rescue Aws::S3::Errors::NoSuchKey
@@ -55,6 +66,10 @@ module GraphProtocol
           ensure
             cleanup(tmp_file) if tmp_file
           end
+        end
+
+        def self.clear_old_queries(query_set)
+          query_set.queries.delete_all
         end
 
         def self.cleanup(tmp_file)

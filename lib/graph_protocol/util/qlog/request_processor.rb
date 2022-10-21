@@ -10,7 +10,7 @@ module GraphProtocol
         include WorkerManager
 
         def initialize(test_instance_id, offset, limit)
-          @instance = GraphProtocol::TestInstance.find_by(id: test_instance_id)
+          @instance = GraphProtocol::Test::Instance.find_by(id: test_instance_id)
           @config = build_config(@instance, offset, limit)
         end
 
@@ -23,12 +23,12 @@ module GraphProtocol
           Async do
             internet = Async::HTTP::Internet.instance
             barrier = Async::Barrier.new
-            semaphore = Async::Semaphore.new(@instance.test.workers, parent: barrier)
+            semaphore = Async::Semaphore.new(@instance.workers, parent: barrier)
 
             queries(@config).each do |query|
               semaphore.async do
 
-                sleep_until_ready(query, @instance.test.sleep_enabled, start_time)
+                sleep_until_ready(query, @instance.sleep_enabled, start_time)
                 result = internet.post(*build_request(query))
 
                 unless result.success?
@@ -55,11 +55,11 @@ module GraphProtocol
 
         private
           def build_config(instance, offset, limit)
-            { :query_set_id => instance.test.query_set.id,
+            { :query_set_id => instance.query_set.id,
               :test_instance_id => instance.id,
               :limit => limit,
               :query_range_start => offset,
-              :subgraphs => instance.test.subgraphs.empty? ? false : instance.test.subgraphs } 
+              :subgraphs => instance.subgraphs.empty? ? false : instance.subgraphs } 
           end
 
           def build_request(query)

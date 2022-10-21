@@ -4,7 +4,7 @@ class GraphProtocol::QuerySet < ApplicationRecord
   validates :name, :status, :file_path, :import_type, :query_set_type, presence: true
   before_validation :set_default_values, on: :create
 
-  QUERY_SET_STATUS = [:created,:importing,:ready,:failed]
+  QUERY_SET_STATUS = [:created,:importing,:ready,:failed,:deleted]
 
   def get_status
     QUERY_SET_STATUS[read_attribute(:status)]
@@ -12,6 +12,13 @@ class GraphProtocol::QuerySet < ApplicationRecord
 
   def set_status(new_status)
     update_attribute(:status,QUERY_SET_STATUS.find_index(new_status))
+  end
+
+  def json_print
+    self.slice(:id,
+               :name,
+               :description,
+               :file_path).merge({:status => get_status})
   end
 
   def import_dataset
