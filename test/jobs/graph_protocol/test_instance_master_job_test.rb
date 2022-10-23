@@ -1,6 +1,6 @@
 require "test_helper"
 
-class GraphProtocol::TestInstanceJobTest < ActiveJob::TestCase
+class GraphProtocol::TestInstanceMasterJobTest < ActiveJob::TestCase
   # test "the truth" do
   #   assert true
   # end

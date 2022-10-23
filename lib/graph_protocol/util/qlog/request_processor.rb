@@ -7,34 +7,36 @@ module GraphProtocol
     module Qlog 
       class RequestProcessor
         include Helpers
-        include WorkerManager
 
-        def initialize(test_instance_id, offset, limit)
+        def initialize(test_instance_id, offset, limit, jid)
           @instance = GraphProtocol::Test::Instance.find_by(id: test_instance_id)
-          @config = build_config(@instance, offset, limit)
+          @offset = offset
+          @limit = limit
+          @jid = jid
         end
 
         def execute
-
-          set_start_time
-          increase_workers_count
-          start_time = get_start_time
 
           Async do
             internet = Async::HTTP::Internet.instance
             barrier = Async::Barrier.new
             semaphore = Async::Semaphore.new(@instance.workers, parent: barrier)
 
-            queries(@config).each do |query|
+            queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
+              if cancelled?
+                internet&.close
+                break  
+              end
+
               semaphore.async do
 
-                sleep_until_ready(query, @instance.sleep_enabled, start_time)
+                sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) unless index == 0
                 result = internet.post(*build_request(query))
 
-                unless result.success?
-                  puts "Failed query: #{query[:query_id]}"
-                  puts "#{result.inspect}"
-                end
+                #unless result.success?
+                #  puts "Failed query: #{query[:query_id]}"
+                #  puts "#{result.inspect}"
+                #end
               ensure
                 result&.close
               end
@@ -43,40 +45,15 @@ module GraphProtocol
             barrier.wait
           ensure
             internet&.close
-            decrease_workers_count
-            check_workers_and_set_end_time
           end
 
         end
-
-          def redis
-            @redis_client ||= Redis.new(url: ENV['REDIS_URL'] || 'redis://127.0.0.1')
-          end
-
-        private
-          def build_config(instance, offset, limit)
-            { :query_set_id => instance.query_set.id,
-              :test_instance_id => instance.id,
-              :limit => limit,
-              :query_range_start => offset,
-              :subgraphs => instance.subgraphs.empty? ? false : instance.subgraphs } 
-          end
 
           def build_request(query)
             url = base_url + query[:subgraph]
             headers = [['content-type','application/json']]
 
             [url, headers, request_body_json(query)]
-          end
-
-          def sleep_until_ready(query, sleep_enabled, start_time)
-            offset = get_remaining_offset(query[:offset], start_time)
-            sleep offset if sleep_enabled 
-          end
-
-          def get_remaining_offset(query_offset = 0.0, start_time)
-            remain = query_offset - (current_time - start_time)
-            remain > 0 ? remain : 0.0
           end
 
           def base_url
@@ -92,6 +69,14 @@ module GraphProtocol
             end
 
             body.to_json
+          end
+
+          def cancelled?
+            Sidekiq.redis {|c| c.exists?("cancelled-#{@jid}") }
+          end
+
+          def self.cancel!(jid)
+            Sidekiq.redis {|c| c.setex("cancelled-#{jid}", 86400, 1) }
           end
 
       end

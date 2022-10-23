@@ -22,6 +22,22 @@ class GraphProtocol::TestsController < ApplicationController
     print_json(response)
   end
 
+  def show_instance
+    test = GraphProtocol::Test.find_by(id: test_id)
+    instance = test.instances.find_by(id: instance_id)
+
+    print_json(instance)
+  end
+
+  def cancel_instance
+    test = GraphProtocol::Test.find_by(id: test_id)
+    instance = test.instances.find_by(id: instance_id)
+    instance.cancel
+    
+    print_json(instance)
+  end
+
+
   def run
     test = GraphProtocol::Test.find_by(id: test_id)
 
@@ -58,6 +74,10 @@ class GraphProtocol::TestsController < ApplicationController
     params.require(:id)
   end
 
+  def instance_id
+    params.require(:iid)
+  end
+
   def test_params
     params.require(:test).permit(:query_set_id,
                                  :subgraphs,
@@ -69,7 +89,7 @@ class GraphProtocol::TestsController < ApplicationController
   end
 
   def print_json(test)
-    if test 
+    if test.id
       render :json => test.json_print
     else
       print_error(error: "Test definition not found.")
