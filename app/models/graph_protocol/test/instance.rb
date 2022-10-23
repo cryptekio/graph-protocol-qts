@@ -62,8 +62,22 @@ class GraphProtocol::Test::Instance < ApplicationRecord
     update_attribute(:status,TEST_STATUS.find_index(new_status))
   end
 
-  def run
-    GraphProtocol::Util::Qlog::RequestLoader.execute(self)
+  def add_jid(jid)
+    jobs << jid
+    save
   end
+
+  def set_master_jid(jid)
+    update_attribute(:master_job,jid)
+  end
+
+  def run
+    GraphProtocol::TestInstanceMasterJob.perform_later(id: self.id)
+  end
+
+  def cancel
+    GraphProtocol::Util::Qlog::TestMaster.cancel!(self)
+  end
+
 
 end

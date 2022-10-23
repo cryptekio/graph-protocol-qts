@@ -8,6 +8,7 @@ class GraphProtocol::Test < ApplicationRecord
     self.slice(:id,
                :query_set_id,
                :subgraphs,
+               :query_limit,
                :chunk_size,
                :sleep_enabled).merge({:instances => instance_preview})
   end

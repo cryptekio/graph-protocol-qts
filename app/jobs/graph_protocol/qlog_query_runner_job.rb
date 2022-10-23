@@ -4,7 +4,8 @@ class GraphProtocol::QlogQueryRunnerJob < ApplicationJob
 
   def perform(test_instance_id, offset, limit)
     processor = GraphProtocol::Util::Qlog::RequestProcessor.new(test_instance_id,
-                                                                offset, limit)
+                                                                offset, limit,
+                                                                self.provider_job_id)
     processor.execute
   end
 

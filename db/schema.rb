@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_10_18_112710) do
+ActiveRecord::Schema[7.0].define(version: 2022_10_23_145545) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -49,6 +49,10 @@ ActiveRecord::Schema[7.0].define(version: 2022_10_18_112710) do
     t.datetime "finished_at", precision: nil
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "jobs", default: [], array: true
+    t.string "master_job"
+    t.float "start_time"
+    t.float "end_time"
     t.index ["test_id"], name: "index_graph_protocol_test_instances_on_test_id"
   end
 

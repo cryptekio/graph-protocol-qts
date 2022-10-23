@@ -4,6 +4,7 @@ class GraphProtocol::Query < ApplicationRecord
 
   def self.subgraphs(subgraphs = [])
       return all unless subgraphs
+      return all if subgraphs.empty?
 
       query = "" 
       subgraphs.each_with_index do |subgraph,index|

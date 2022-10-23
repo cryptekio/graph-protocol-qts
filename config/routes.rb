@@ -9,7 +9,8 @@ Rails.application.routes.draw do
   get '/tests/:id', to: 'graph_protocol/tests#show'
   post '/tests/:id/run', to: 'graph_protocol/tests#run'
   delete '/tests/:id', to: 'graph_protocol/tests#delete'
-  get '/tests/:id/instance/:iid', to: 'graph_protocol/tests/instance#show'
+  get '/tests/:id/instance/:iid', to: 'graph_protocol/tests#show_instance'
+  post '/tests/:id/instance/:iid/stop', to: 'graph_protocol/tests#cancel_instance'
 
   get '/querysets', to: 'graph_protocol/query_set#index'
   get '/querysets/:id', to: 'graph_protocol/query_set#show'
