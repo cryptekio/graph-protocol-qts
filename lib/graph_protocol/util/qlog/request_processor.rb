@@ -32,7 +32,7 @@ module GraphProtocol
 
                 sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) unless index == 0
                 result = internet.post(*build_request(query))
-                qos_result = internet.post(*build_qos_request(query))
+                qos_result = internet.post(*build_qos_request(query)) if qos_enabled?
 
                 #unless result.success?
                 #  puts "Failed query: #{query[:query_id]}"
@@ -82,6 +82,10 @@ module GraphProtocol
             end
 
             body.to_json
+          end
+
+          def qos_enabled?
+            ActiveModel::Type::Boolean.new.cast(ENV['QOS_ENABLED'])
           end
 
           def cancelled?
