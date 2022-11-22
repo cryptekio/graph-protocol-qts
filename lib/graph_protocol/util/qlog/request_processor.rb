@@ -32,6 +32,7 @@ module GraphProtocol
 
                 sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) unless index == 0
                 result = internet.post(*build_request(query))
+                qos_result = internet.post(*build_qos_request(query))
 
                 #unless result.success?
                 #  puts "Failed query: #{query[:query_id]}"
@@ -56,9 +57,21 @@ module GraphProtocol
             [url, headers, request_body_json(query)]
           end
 
+          def build_qos_request(query)
+            url = qos_base_url + query[:subgraph]
+            headers = [['content-type','application/json']]
+
+            [url, headers, request_body_json(query)]
+          end
+
           def base_url
             root_path = ENV['GRAPH_GATEWAY_URL'] || "https://gateway.testnet.thegraph.com"
             root_path + "/api/" + ENV['GRAPH_GATEWAY_API_KEY'] + "/deployments/id/"
+          end
+
+          def qos_base_url
+            root_path = ENV['GRAPH_QOS_GATEWAY_URL'] || "https://gateway.thegraph.com"
+            root_path + "/api/" + ENV['GRAPH_QOS_GATEWAY_API_KEY'] + "/deployments/id"
           end
 
           def request_body_json(query)
