@@ -35,6 +35,11 @@ module GraphProtocol
               test_instance.add_jid(job.provider_job_id)
 
               offset += limit
+
+              if test_instance.loop? and offset >= size
+                offset = 0
+              end
+
             end
 
             sleep_until_workers_finish(test_instance,jobs)

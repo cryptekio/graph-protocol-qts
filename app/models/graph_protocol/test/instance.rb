@@ -20,6 +20,7 @@ class GraphProtocol::Test::Instance < ApplicationRecord
                     :chunk_size,
                     :query_limit,
                     :speed_factor,
+                    :loop_queries,
                     :sleep_enabled).merge({:status => get_status})
   end
 
@@ -28,8 +29,13 @@ class GraphProtocol::Test::Instance < ApplicationRecord
       subgraphs: subgraphs,
       chunk_size: chunk_size,
       speed_factor: speed_factor,
+      loop_queries: loop_queries,
       query_limit: query_limit
     }
+  end
+
+  def loop?
+    test.loop?
   end
 
   def speed_factor
