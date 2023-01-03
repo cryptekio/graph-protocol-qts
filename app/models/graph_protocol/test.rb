@@ -1,7 +1,7 @@
 class GraphProtocol::Test < ApplicationRecord
   belongs_to :query_set
   has_many :instances, dependent: :destroy
-  validates :query_set_id, :chunk_size, :sleep_enabled, presence: true
+  validates :query_set_id, :chunk_size, :sleep_enabled, :loop_queries, presence: true
   before_validation :set_default_values, on: :create
 
   def json_print
@@ -11,6 +11,7 @@ class GraphProtocol::Test < ApplicationRecord
                :query_limit,
                :chunk_size,
                :speed_factor,
+               :loop_queries,
                :sleep_enabled).merge({:instances => instance_preview})
   end
 
@@ -22,11 +23,16 @@ class GraphProtocol::Test < ApplicationRecord
     result
   end
 
+  def loop?
+    self.loop_queries
+  end
+
   def set_default_values
     self.subgraphs = [] if self.subgraphs.nil?
     self.chunk_size = 1000 if self.chunk_size.blank?
     self.sleep_enabled = true if self.sleep_enabled.nil?
     self.speed_factor = 1.0 if self.speed_factor.nil?
+    self.loop_queries = false if self.loop_queries.nil?
   end
 
 end
