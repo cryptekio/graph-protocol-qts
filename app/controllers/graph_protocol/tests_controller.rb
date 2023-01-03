@@ -81,6 +81,7 @@ class GraphProtocol::TestsController < ApplicationController
   def test_params
     params.require(:test).permit(:query_set_id,
                                  :subgraphs,
+                                 :speed_factor,
                                  :query_limit)
   end
 

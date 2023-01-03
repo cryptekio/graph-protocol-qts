@@ -13,8 +13,8 @@ module GraphProtocol
           query_set.queries.subgraphs(test_instance.subgraphs).sort_by_delay.set_offset(range_start).set_limit(query_limit)
         end
 
-        def sleep_until_ready(query, sleep_enabled, start_time)
-          offset = get_remaining_offset(query[:offset], start_time)
+        def sleep_until_ready(query, sleep_enabled, start_time, speed_factor = 1.0)
+          offset = get_remaining_offset(query[:offset], start_time) / speed_factor
           sleep offset if sleep_enabled
         end
 
