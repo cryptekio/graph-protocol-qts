@@ -44,7 +44,7 @@ module GraphProtocol
             clear_old_queries(query_set) if reimport
 
             import_to_psql(query_set) do |copy|
-              read_gzip_by_line(tmp_file) do |line|
+              read_by_line(tmp_file) do |line|
                 write_query(query_set_id: query_set.id,
                             psql_handler: copy,
                             time: time,
@@ -89,6 +89,18 @@ module GraphProtocol
           tmp_file
         end
 
+        def self.read_by_line(file)
+          if json_file?(file)
+            read_file_by_line(file) do |line|
+              yield line
+            end
+          else
+            read_gzip_by_line(file) do |line|
+              yield line
+            end
+          end
+        end
+
         def self.read_gzip_by_line(file)
           Zlib::GzipReader.open(file) do |gz|
             gz.each_line do |line|
@@ -101,6 +113,10 @@ module GraphProtocol
           File.readlines(file).each do |line|
             yield line
           end
+        end
+
+        def self.json_file?(file)
+          `file --brief --mime-type #{file}`.strip == "application/json"
         end
 
         def self.tmp_dir
