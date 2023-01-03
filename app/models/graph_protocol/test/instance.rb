@@ -19,6 +19,7 @@ class GraphProtocol::Test::Instance < ApplicationRecord
                     :subgraphs,
                     :chunk_size,
                     :query_limit,
+                    :speed_factor,
                     :sleep_enabled).merge({:status => get_status})
   end
 
@@ -26,8 +27,13 @@ class GraphProtocol::Test::Instance < ApplicationRecord
     { query_set_id: query_set.id,
       subgraphs: subgraphs,
       chunk_size: chunk_size,
+      speed_factor: speed_factor,
       query_limit: query_limit
     }
+  end
+
+  def speed_factor
+    test.speed_factor
   end
 
   def sleep_enabled

@@ -10,6 +10,7 @@ class GraphProtocol::Test < ApplicationRecord
                :subgraphs,
                :query_limit,
                :chunk_size,
+               :speed_factor,
                :sleep_enabled).merge({:instances => instance_preview})
   end
 
@@ -25,6 +26,7 @@ class GraphProtocol::Test < ApplicationRecord
     self.subgraphs = [] if self.subgraphs.nil?
     self.chunk_size = 1000 if self.chunk_size.blank?
     self.sleep_enabled = true if self.sleep_enabled.nil?
+    self.speed_factor = 1.0 if self.speed_factor.nil?
   end
 
 end
