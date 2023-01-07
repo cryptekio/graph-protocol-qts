@@ -37,6 +37,7 @@ module GraphProtocol
               offset += limit
 
               if test_instance.loop? and offset >= size
+                test_instance.start_time = current_time
                 offset = 0
               end
 
