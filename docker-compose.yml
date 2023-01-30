@@ -34,8 +34,6 @@ services:
     deploy:
       replicas: 3
     command: bundle exec sidekiq 
-    volumes:
-      - .:/myapp
     links:
       - postgres
       - redis
