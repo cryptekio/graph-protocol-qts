@@ -20,10 +20,7 @@ services:
       - redis-db:/data
 
   web:
-    build: .
-    volumes:
-      - .:/myapp
-      - tmp-vol:/tmp/imports
+    image: crypt1d/graphprotocol-qts
     links:
       - postgres
       - redis
@@ -33,8 +30,7 @@ services:
       - .env
 
   sidekiq:
-    build:
-      context: .
+    image: crypt1d/graphprotocol-qts
     deploy:
       replicas: 3
     command: bundle exec sidekiq 
