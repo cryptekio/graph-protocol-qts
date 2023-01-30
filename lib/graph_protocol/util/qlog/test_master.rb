@@ -17,8 +17,6 @@ module GraphProtocol
             offset = 0
             test_instance.start_time = current_time 
 
-            jobs = []
-
             while size > offset
               return if cancelled?(test_instance)
               first_query = queries(test_instance,
@@ -31,7 +29,6 @@ module GraphProtocol
               job = GraphProtocol::QlogQueryRunnerJob.perform_later(test_instance.id,
                                                                     offset,
                                                                     limit)
-              jobs << job.provider_job_id
               test_instance.add_jid(job.provider_job_id)
 
               offset += limit
@@ -43,7 +40,7 @@ module GraphProtocol
 
             end
 
-            sleep_until_workers_finish(test_instance,jobs)
+            sleep_until_workers_finish(test_instance)
           
             test_instance.set_status :finished
           rescue SignalException
@@ -54,7 +51,7 @@ module GraphProtocol
 
         # wait for workers to finish
         # this is sidekiq specific
-        def self.sleep_until_workers_finish(test_instance,jobs)
+        def self.sleep_until_workers_finish(test_instance)
           running = true
 
           while running
@@ -65,7 +62,7 @@ module GraphProtocol
               worker_jids << jid
             end
 
-            remaining_jobs = jobs & worker_jids
+            remaining_jobs = test_instance.jobs & worker_jids
 
             if remaining_jobs.empty?
               running = false

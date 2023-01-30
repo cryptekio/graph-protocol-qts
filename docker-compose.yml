@@ -35,6 +35,8 @@ services:
   sidekiq:
     build:
       context: .
+    deploy:
+      replicas: 3
     command: bundle exec sidekiq 
     volumes:
       - .:/myapp
