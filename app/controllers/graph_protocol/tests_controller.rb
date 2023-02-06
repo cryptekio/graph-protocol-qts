@@ -83,7 +83,8 @@ class GraphProtocol::TestsController < ApplicationController
                                  :subgraphs,
                                  :speed_factor,
                                  :loop_queries,
-                                 :query_limit)
+                                 :query_limit,
+                                 :environment_id)
   end
 
   def print_error(msg = {})

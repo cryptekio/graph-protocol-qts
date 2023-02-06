@@ -57,8 +57,8 @@ module GraphProtocol
           end
 
           def base_url
-            root_path = ENV['GRAPH_GATEWAY_URL'] || "https://gateway.testnet.thegraph.com"
-            root_path + "/api/" + ENV['GRAPH_GATEWAY_API_KEY'] + "/deployments/id/"
+            root_path = @instance.gateway_url || "https://gateway.testnet.thegraph.com"
+            root_path + "/api/" + @instance.api_key + "/deployments/id/"
           end
 
           def request_body_json(query)

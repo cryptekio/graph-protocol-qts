@@ -4,6 +4,9 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "articles#index"
 
+  post '/environments', to: 'graph_protocol/environments#create'
+  get '/environments', to: 'graph_protocol/environments#index'
+
   post '/tests', to: 'graph_protocol/tests#create'
   get '/tests', to: 'graph_protocol/tests#index'
   get '/tests/:id', to: 'graph_protocol/tests#show'
