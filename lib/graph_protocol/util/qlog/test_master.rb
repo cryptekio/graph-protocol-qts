@@ -22,7 +22,9 @@ module GraphProtocol
               first_query = queries(test_instance,
                                     range_start: offset,
                                     limit: 1).first
-              sleep_until_ready(first_query, test_instance.sleep_enabled, test_instance.start_time, test_instance.speed_factor)
+              sleep_until_ready(first_query, test_instance.sleep_enabled, test_instance.start_time, test_instance.speed_factor) do |offset|
+                break if cancelled?(test_instance)
+              end
 
               return if cancelled?(test_instance)
 
