@@ -80,11 +80,11 @@ class GraphProtocol::TestsController < ApplicationController
 
   def test_params
     params.require(:test).permit(:query_set_id,
-                                 :subgraphs,
                                  :speed_factor,
                                  :loop_queries,
                                  :query_limit,
-                                 :environment_id)
+                                 :environment_id,
+                                 subgraphs: [])
   end
 
   def print_error(msg = {})
