@@ -7,14 +7,14 @@ class GraphProtocol::Test < ApplicationRecord
 
   def json_print
     env_name = self.environment.nil? ? "null" : self.environment.name
+    query_set_name = self.query_set.name
     self.slice(:id,
-               :query_set_id,
                :subgraphs,
                :query_limit,
                :chunk_size,
                :speed_factor,
                :loop_queries,
-               :sleep_enabled).merge({:environment => env_name}).merge({:instances => instance_preview})
+               :sleep_enabled).merge({:environment => env_name}).merge({:query_set => query_set_name}).merge({:instances => instance_preview})
   end
 
   def instance_preview
