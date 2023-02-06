@@ -30,7 +30,12 @@ module GraphProtocol
 
               semaphore.async do
 
-                sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) unless index == 0
+                sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) do |offset|
+                  break if cancelled?
+                end unless index == 0
+
+                break if cancelled?
+
                 result = internet.post(*build_request(query))
 
                 #unless result.success?
@@ -42,6 +47,7 @@ module GraphProtocol
               end
             end
 
+            break if cancelled?
             barrier.wait
           ensure
             internet&.close

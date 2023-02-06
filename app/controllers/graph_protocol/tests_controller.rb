@@ -22,6 +22,27 @@ class GraphProtocol::TestsController < ApplicationController
     print_json(response)
   end
 
+  def start_all
+    GraphProtocol::Test.all.each do |test|
+      instance = test.instances.create
+    end
+  end
+
+  def stop_all
+    GraphProtocol::Test.all.each do |test|
+      test.instances.each do |instance|
+        instance.cancel
+      end
+    end
+  end
+
+  def stop_all_instances
+    test = GraphProtocol::Test.find_by(id: test_id)
+    test.instances.each do |instance|
+      instance.cancel
+    end
+  end
+
   def show_instance
     test = GraphProtocol::Test.find_by(id: test_id)
     instance = test.instances.find_by(id: instance_id)

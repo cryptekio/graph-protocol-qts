@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   post '/environments', to: 'graph_protocol/environments#create'
   get '/environments', to: 'graph_protocol/environments#index'
 
+  post '/tests/stopall', to: 'graph_protocol/tests#stop_all'
+  post '/tests/startall', to: 'graph_protocol/tests#start_all'
+  post '/tests/:id/stop', to: 'graph_protocol/tests#stop_all_instances'
   post '/tests', to: 'graph_protocol/tests#create'
   get '/tests', to: 'graph_protocol/tests#index'
   get '/tests/:id', to: 'graph_protocol/tests#show'
