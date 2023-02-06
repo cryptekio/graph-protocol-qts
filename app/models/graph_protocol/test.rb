@@ -1,10 +1,12 @@
 class GraphProtocol::Test < ApplicationRecord
   belongs_to :query_set
+  belongs_to :environment
   has_many :instances, dependent: :destroy
   validates :query_set_id, :chunk_size, :sleep_enabled, :loop_queries, presence: true
   before_validation :set_default_values, on: :create
 
   def json_print
+    env_name = self.environment.nil? ? "null" : self.environment.name
     self.slice(:id,
                :query_set_id,
                :subgraphs,
@@ -12,7 +14,7 @@ class GraphProtocol::Test < ApplicationRecord
                :chunk_size,
                :speed_factor,
                :loop_queries,
-               :sleep_enabled).merge({:instances => instance_preview})
+               :sleep_enabled).merge({:environment => env_name}).merge({:instances => instance_preview})
   end
 
   def instance_preview

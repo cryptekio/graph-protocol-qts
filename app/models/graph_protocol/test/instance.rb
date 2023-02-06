@@ -34,6 +34,14 @@ class GraphProtocol::Test::Instance < ApplicationRecord
     }
   end
 
+  def api_key
+    test.environment.api_key
+  end
+
+  def gateway_url
+    test.environment.gateway_url
+  end
+
   def loop?
     test.loop?
   end

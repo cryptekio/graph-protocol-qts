@@ -10,10 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_01_03_125235) do
+ActiveRecord::Schema[7.0].define(version: 2023_02_03_224346) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "graph_protocol_environments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name"
+    t.string "gateway_url"
+    t.string "api_keys", default: [], array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "graph_protocol_queries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "query_set_id"
@@ -67,6 +75,8 @@ ActiveRecord::Schema[7.0].define(version: 2023_01_03_125235) do
     t.datetime "updated_at", null: false
     t.float "speed_factor", default: 1.0
     t.boolean "loop_queries", default: false
+    t.uuid "environment_id"
+    t.index ["environment_id"], name: "index_graph_protocol_tests_on_environment_id"
     t.index ["query_set_id"], name: "index_graph_protocol_tests_on_query_set_id"
   end
 
