@@ -7,36 +7,47 @@ services:
     environment:
       POSTGRES_USER: rails 
       POSTGRES_PASSWORD: EDGk5vCM9b57
-    ports: 
-      - '127.0.0.1:5432:5432'
+    networks:
+      - graphqts
     volumes:
       - postgres-db:/var/lib/postgresql/data
 
-  redis:
+  cache:
     image: redis:7.0
-    ports:
-      - '127.0.0.1:6379:6379'
+    networks:
+      - graphqts
     volumes:
       - redis-db:/data
 
   web:
     image: crypt1d/graphprotocol-qts
-    links:
-      - postgres
-      - redis
+      #command: /bin/bash -c "rails db:create && rails db:migrate && rails server -b 0.0.0.0"
     ports:
-      - '127.0.0.1:3000:3000'
+      - 3000:3000
+    networks:
+      - graphqts
+    depends_on:
+      - cache 
+      - postgres 
     env_file:
       - .env
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   sidekiq:
     image: crypt1d/graphprotocol-qts
     deploy:
+      mode: replicated
       replicas: 3
+      placement:
+        constraints: [node.role == worker]
+    networks:
+      - graphqts
+    depends_on:
+      - cache 
+      - postgres 
     command: bundle exec sidekiq 
-    links:
-      - postgres
-      - redis
     env_file:
       - .env
     stop_grace_period: 60s 
@@ -45,3 +56,6 @@ volumes:
   postgres-db:
   redis-db:
   tmp-vol:
+
+networks:
+  graphqts:
