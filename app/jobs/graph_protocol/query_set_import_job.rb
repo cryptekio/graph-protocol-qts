@@ -1,5 +1,5 @@
 class GraphProtocol::QuerySetImportJob < ApplicationJob
-  queue_as :default
+  queue_as :imports
   sidekiq_options retry: 2, dead: false 
 
   def perform(query_set_id:)
@@ -8,9 +8,13 @@ class GraphProtocol::QuerySetImportJob < ApplicationJob
       query_set.set_status :importing
       GraphProtocol::Util::QuerySet::Importer.execute!(query_set)
       query_set.set_status :ready
-    rescue GraphProtocol::Util::QuerySet::ImporterError => e
+    #rescue GraphProtocol::Util::QuerySet::ImporterError => e
+    #  set_to_failed(query_set.id)
+    #  return 
+    rescue Exception => exc
+      puts exc.message
       set_to_failed(query_set.id)
-      return 
+      return
     end
   end
 
