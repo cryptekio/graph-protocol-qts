@@ -1,5 +1,5 @@
 class GraphProtocol::QuerySetImportJob < ApplicationJob
-  queue_as :default
+  queue_as :imports
   sidekiq_options retry: 2, dead: false 
 
   def perform(query_set_id:)

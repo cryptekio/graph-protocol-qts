@@ -35,6 +35,22 @@ services:
       placement:
         constraints: [node.role == manager]
 
+  sidekiq-imports:
+    image: crypt1d/graphprotocol-qts
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - graphqts
+    depends_on:
+      - cache
+      - postgres
+      - web
+    command: bundle exec sidekiq -q imports
+    env_file:
+      - .env
+    stop_grace_period: 60s
+
   sidekiq:
     image: crypt1d/graphprotocol-qts
     deploy:
