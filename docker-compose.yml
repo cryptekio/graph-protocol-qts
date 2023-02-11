@@ -21,7 +21,7 @@ services:
 
   web:
     image: crypt1d/graphprotocol-qts
-      #command: /bin/bash -c "rails db:create && rails db:migrate && rails server -b 0.0.0.0"
+    command: /bin/bash -c "rails db:create && rails db:migrate && rails server -b 0.0.0.0"
     ports:
       - 3000:3000
     networks:
@@ -47,6 +47,7 @@ services:
     depends_on:
       - cache 
       - postgres 
+      - web
     command: bundle exec sidekiq 
     env_file:
       - .env
