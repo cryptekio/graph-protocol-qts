@@ -11,6 +11,9 @@ services:
       - graphqts
     volumes:
       - postgres-db:/var/lib/postgresql/data
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   cache:
     image: redis:7.0
@@ -18,6 +21,9 @@ services:
       - graphqts
     volumes:
       - redis-db:/data
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
   web:
     image: crypt1d/graphprotocol-qts
@@ -35,6 +41,24 @@ services:
       placement:
         constraints: [node.role == manager]
 
+  sidekiq-imports:
+    image: crypt1d/graphprotocol-qts
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    volumes:
+      - tmp-vol:/tmp/imports
+    networks:
+      - graphqts
+    depends_on:
+      - cache
+      - postgres
+      - web
+    command: bundle exec sidekiq -q imports
+    env_file:
+      - .env
+    stop_grace_period: 60s
+
   sidekiq:
     image: crypt1d/graphprotocol-qts
     deploy:
@@ -42,6 +66,8 @@ services:
       replicas: 3
       placement:
         constraints: [node.role == worker]
+        preferences:
+          - spread: node.hostname
     networks:
       - graphqts
     depends_on:
@@ -60,3 +86,7 @@ volumes:
 
 networks:
   graphqts:
+    attachable: true
+    driver: overlay
+    #driver_opts:
+    #  com.docker.network.driver.mtu: 1280
