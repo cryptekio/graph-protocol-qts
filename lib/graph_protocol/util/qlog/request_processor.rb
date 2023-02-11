@@ -17,38 +17,36 @@ module GraphProtocol
 
         def execute
 
-          Async do
+          Async do |task|
             internet = Async::HTTP::Internet.instance
             barrier = Async::Barrier.new
-            semaphore = Async::Semaphore.new(@instance.workers, parent: barrier)
 
             queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
-              if cancelled?
-                internet&.close
-                break  
-              end
-
-              semaphore.async do
-
-                sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) do |offset|
-                  break if cancelled?
-                end unless index == 0
-
+              
+              sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) do |offset|
                 break if cancelled?
+              end unless index == 0
 
-                result = internet.post(*build_request(query))
-
-                #unless result.success?
-                #  puts "Failed query: #{query[:query_id]}"
-                #  puts "#{result.inspect}"
-                #end
-              ensure
-                result&.close
+              barrier.async do
+                task.with_timeout(30) do
+                  result = internet.post(*build_request(query))
+                end
               end
+
+              #unless result.success?
+              #  puts "Failed query: #{query[:query_id]}"
+              #  puts "#{result.inspect}"
+              #end
+              
+              break if cancelled?
             end
 
-            break if cancelled?
-            barrier.wait
+            if cancelled?
+              break
+            else
+              barrier.wait
+            end
+
           ensure
             internet&.close
           end
