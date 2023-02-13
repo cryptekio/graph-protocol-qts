@@ -31,7 +31,7 @@ class GraphProtocol::Test < ApplicationRecord
 
   def set_default_values
     self.subgraphs = [] if self.subgraphs.nil?
-    self.chunk_size = 1000 if self.chunk_size.blank?
+    self.chunk_size = 100 if self.chunk_size.blank?
     self.sleep_enabled = true if self.sleep_enabled.nil?
     self.speed_factor = 1.0 if self.speed_factor.nil?
     self.loop_queries = false if self.loop_queries.nil?
