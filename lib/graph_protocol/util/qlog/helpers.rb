@@ -14,7 +14,7 @@ module GraphProtocol
         end
 
         def sleep_until_ready(query, sleep_enabled, start_time, speed_factor = 1.0)
-          offset = get_remaining_offset(query[:offset], start_time) / speed_factor
+          offset = get_remaining_offset(query.offset, start_time, speed_factor)
           if sleep_enabled
             while offset > 1
               sleep 1
@@ -26,8 +26,8 @@ module GraphProtocol
 
         end
 
-        def get_remaining_offset(query_offset = 0.0, start_time)
-          remain = query_offset - (current_time - start_time)
+        def get_remaining_offset(query_offset = 0.0, start_time, speed_factor)
+          remain = (query_offset / speed_factor) - (current_time - start_time)
           remain > 0 ? remain : 0.0
         end
 

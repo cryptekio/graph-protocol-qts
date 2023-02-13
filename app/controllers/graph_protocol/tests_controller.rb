@@ -103,6 +103,7 @@ class GraphProtocol::TestsController < ApplicationController
     params.require(:test).permit(:query_set_id,
                                  :speed_factor,
                                  :loop_queries,
+                                 :chunk_size,
                                  :query_limit,
                                  :environment_id,
                                  subgraphs: [])

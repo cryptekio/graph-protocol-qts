@@ -15,7 +15,7 @@ module GraphProtocol
             size = queries(test_instance).count
             limit = test_instance.chunk_size || size
             offset = 0
-            test_instance.start_time = current_time 
+            test_instance.set_start_time current_time
 
             while size > offset
               return if cancelled?(test_instance)
@@ -36,14 +36,14 @@ module GraphProtocol
               offset += limit
 
               if test_instance.loop? and offset >= size
-                test_instance.start_time = current_time
+                test_instance.set_start_time current_time
                 offset = 0
               end
 
             end
 
             sleep_until_workers_finish(test_instance)
-          
+
             test_instance.set_status :finished
           rescue SignalException
             cancel!
