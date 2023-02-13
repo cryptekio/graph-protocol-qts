@@ -30,14 +30,16 @@ module GraphProtocol
               barrier.async do
                 task.with_timeout(30) do
                   result = internet.post(*build_request(query))
+                  # puts result.read
+                  #unless result.success?
+                  #  puts "Failed query: #{query[:query_id]}"
+                  #  puts "#{result.inspect}"
+                  #end
+                  #
+                  result.close
                 end
               end
 
-              #unless result.success?
-              #  puts "Failed query: #{query[:query_id]}"
-              #  puts "#{result.inspect}"
-              #end
-              
               break if cancelled?
             end
 
