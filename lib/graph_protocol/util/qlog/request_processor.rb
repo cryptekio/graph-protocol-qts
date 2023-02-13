@@ -23,7 +23,7 @@ module GraphProtocol
 
             queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
               
-              sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time) do |offset|
+              sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time, @instance.speed_factor) do |offset|
                 break if cancelled?
               end unless index == 0
 
