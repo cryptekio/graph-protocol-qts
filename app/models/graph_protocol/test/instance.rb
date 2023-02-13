@@ -91,6 +91,10 @@ class GraphProtocol::Test::Instance < ApplicationRecord
     update_attribute(:master_job,jid)
   end
 
+  def set_start_time(start_time)
+    update_attribute(:start_time, start_time)
+  end
+
   def run
     GraphProtocol::TestInstanceMasterJob.perform_later(id: self.id)
   end

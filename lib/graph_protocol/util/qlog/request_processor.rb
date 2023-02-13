@@ -17,27 +17,25 @@ module GraphProtocol
 
         def execute
 
-          Async do |task|
+          Async do
             internet = Async::HTTP::Internet.instance
             barrier = Async::Barrier.new
 
             queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
-              
+
               sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time, @instance.speed_factor) do |offset|
                 break if cancelled?
               end unless index == 0
 
               barrier.async do
-                task.with_timeout(30) do
-                  result = internet.post(*build_request(query))
-                  # puts result.read
-                  #unless result.success?
-                  #  puts "Failed query: #{query[:query_id]}"
-                  #  puts "#{result.inspect}"
-                  #end
-                  #
-                  result.close
-                end
+                result = internet.post(*build_request(query))
+                # puts result.read
+                #unless result.success?
+                #  puts "Failed query: #{query[:query_id]}"
+                #  puts "#{result.inspect}"
+                #end
+                #
+                result.close unless result.nil?
               end
 
               break if cancelled?
