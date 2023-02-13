@@ -43,7 +43,7 @@ module GraphProtocol
             end
 
             sleep_until_workers_finish(test_instance)
-          
+
             test_instance.set_status :finished
           rescue SignalException
             cancel!

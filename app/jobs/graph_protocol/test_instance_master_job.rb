@@ -1,5 +1,5 @@
 class GraphProtocol::TestInstanceMasterJob < ApplicationJob
-  queue_as :default
+  queue_as :testmaster
   sidekiq_options retry: 2, dead: false
 
   def perform(id:)
