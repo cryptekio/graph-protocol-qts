@@ -1,7 +1,3 @@
-require 'async/http/internet/instance' 
-require 'async/barrier'
-require 'async/semaphore'
-
 module GraphProtocol
   module Util
     module Qlog 
@@ -17,48 +13,30 @@ module GraphProtocol
 
         def execute
 
-          Async do
-            internet = Async::HTTP::Internet.instance
-            barrier = Async::Barrier.new
+          hydra = Typhoeus::Hydra.new
 
-            queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
+          queries(@instance, range_start: @offset, limit: @limit).each_with_index do |query,index|
 
+            break if cancelled?
+
+            url = base_url + query[:subgraph]
+            headers = { 'Content-Type': 'application/json' }
+            req = Typhoeus::Request.new(url, 
+                                        method: :post,
+                                        body: request_body_json(query),
+                                        headers: headers)
+
+            req.on_complete do |resp|
               sleep_until_ready(query, @instance.sleep_enabled, @instance.start_time, @instance.speed_factor) do |offset|
                 break if cancelled?
               end unless index == 0
-
-              barrier.async do
-                result = internet.post(*build_request(query))
-                # puts result.read
-                #unless result.success?
-                #  puts "Failed query: #{query[:query_id]}"
-                #  puts "#{result.inspect}"
-                #end
-                #
-                result.close unless result.nil?
-              end
-
-              break if cancelled?
             end
 
-            if cancelled?
-              break
-            else
-              barrier.wait
-            end
-
-          ensure
-            internet&.close
+            hydra.queue(req)
           end
 
+          hydra.run unless cancelled?
         end
-
-          def build_request(query)
-            url = base_url + query[:subgraph]
-            headers = [['content-type','application/json']]
-
-            [url, headers, request_body_json(query)]
-          end
 
           def base_url
             root_path = @instance.gateway_url || "https://gateway.testnet.thegraph.com"

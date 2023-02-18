@@ -9,7 +9,7 @@ module GraphProtocolQts
     config.eager_load_paths << Rails.root.join('lib')
     config.load_defaults 7.0
     config.active_job.queue_adapter = :sidekiq
-    config.log_level = :debug
+    config.log_level = :warn
     config.log_tags = [:subdomain, :uuid]
     config.logger    = ActiveSupport::TaggedLogging.new(Logger.new(STDOUT))
 
