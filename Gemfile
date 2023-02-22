@@ -5,6 +5,7 @@ ruby "3.0.0"
 
 gem 'activerecord-copy'
 gem 'sidekiq'
+gem 'typhoeus'
 gem 'async-http'
 gem 'thread-local'
 gem 'aws-sdk-s3'
